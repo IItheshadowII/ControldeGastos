@@ -15,6 +15,7 @@ export async function PATCH(
 
     const existing = await prisma.transaction.findFirst({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (existing.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const updateData: any = {};
 
@@ -61,6 +62,7 @@ export async function DELETE(
 
     const existing = await prisma.transaction.findFirst({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (existing.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     await prisma.transaction.delete({
         where: { id },

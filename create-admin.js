@@ -5,9 +5,15 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function createAdmin() {
-    const email = 'ezequielbanega@gmail.com';
-    const password = 'Cerberus456852!';
-    const name = 'Ezequiel';
+    const email = process.env.ADMIN_EMAIL;
+    const password = process.env.ADMIN_PASSWORD;
+    const name = process.env.ADMIN_NAME || 'Admin';
+
+    if (!email || !password) {
+        console.error('❌ Debes definir ADMIN_EMAIL y ADMIN_PASSWORD como variables de entorno.');
+        console.error('   Ejemplo: ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=miClave123 node create-admin.js');
+        process.exit(1);
+    }
 
     try {
         // Verificar si el usuario ya existe

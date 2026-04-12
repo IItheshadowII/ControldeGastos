@@ -29,6 +29,11 @@ export const auth = async (): Promise<AppSession | null> => {
 
     if (!session || !session.user) return null
 
+    if (new Date(session.expires) < new Date()) {
+        await prisma.session.delete({ where: { sessionToken: token } })
+        return null
+    }
+
     return {
         user: {
             id: session.user.id,
@@ -61,6 +66,11 @@ export async function authFromRequest(req: NextRequest): Promise<AppSession | nu
 
     if (!session || !session.user) return null
 
+    if (new Date(session.expires) < new Date()) {
+        await prisma.session.delete({ where: { sessionToken: token } })
+        return null
+    }
+
     return {
         user: {
             id: session.user.id,
@@ -76,16 +86,8 @@ export async function authFromRequest(req: NextRequest): Promise<AppSession | nu
 export async function signInWithCredentials(email: string, password: string, name?: string) {
     const user = await prisma.user.findUnique({ where: { email } })
 
-    if (!user) {
-        throw new Error("Usuario no encontrado")
-    }
-
-    if (!user.isActive) {
-        throw new Error("Usuario deshabilitado")
-    }
-
-    if (!user.passwordHash) {
-        throw new Error("El usuario no tiene contraseña configurada")
+    if (!user || !user.isActive || !user.passwordHash) {
+        throw new Error("Credenciales inválidas")
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash)
@@ -126,7 +128,7 @@ export async function signOut() {
     cookieStore.set(SESSION_COOKIE_NAME, "", {
         httpOnly: true,
         sameSite: "lax",
-        secure: false,
+        secure: process.env.NODE_ENV === "production",
         path: "/",
         maxAge: 0,
     })

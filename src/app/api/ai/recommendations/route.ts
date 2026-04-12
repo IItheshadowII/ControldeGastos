@@ -68,6 +68,7 @@ export async function GET(req: NextRequest) {
     }
 
     const transactions = await prisma.transaction.findMany({
+        where: { userId },
         take: 50,
         orderBy: { date: 'desc' }
     });

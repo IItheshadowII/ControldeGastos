@@ -6,6 +6,7 @@ export async function getTransactions() {
     if (!session?.user?.id) return []
 
     return await prisma.transaction.findMany({
+        where: { userId: session.user.id },
         orderBy: { date: 'desc' },
     })
 }

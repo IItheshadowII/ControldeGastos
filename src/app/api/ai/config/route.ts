@@ -13,10 +13,15 @@ export async function GET() {
         return NextResponse.json({ provider: "google", apiKey: "", modelName: "" });
     }
 
+    const maskedKey = existing.apiKey
+        ? existing.apiKey.slice(0, 4) + '...' + existing.apiKey.slice(-4)
+        : '';
+
     return NextResponse.json({
         provider: existing.provider,
-        apiKey: existing.apiKey,
+        apiKey: maskedKey,
         modelName: existing.modelName || "",
+        hasKey: !!existing.apiKey,
     });
 }
 
@@ -26,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     const { provider, apiKey, modelName } = await req.json();
 
-    const existing = await prisma.aIConfig.findFirst();
+    const existing = await prisma.aIConfig.findFirst({ where: { userId: session.user.id } });
     if (existing) {
         await prisma.aIConfig.update({
             where: { id: existing.id },

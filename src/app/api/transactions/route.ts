@@ -47,9 +47,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
     }
 
+    const allowedFields: Record<string, unknown> = {};
+    if (typeof data.description === 'string') allowedFields.description = data.description;
+    if (typeof data.category === 'string') allowedFields.category = data.category;
+    if (typeof data.type === 'string' && ['income', 'expense'].includes(data.type)) allowedFields.type = data.type;
+    if (typeof data.currency === 'string' && ['ARS', 'USD'].includes(data.currency)) allowedFields.currency = data.currency;
+    if (typeof data.frequency === 'string') allowedFields.frequency = data.frequency;
+    if (typeof data.incomeType === 'string') allowedFields.incomeType = data.incomeType;
+    if (typeof data.isPaid === 'boolean') allowedFields.isPaid = data.isPaid;
+    if (typeof data.isSavings === 'boolean') allowedFields.isSavings = data.isSavings;
+
     const transaction = await prisma.transaction.create({
         data: {
-            ...data,
+            ...allowedFields,
             amount: amountNumber,
             userId,
             date: new Date(),
@@ -70,6 +80,7 @@ export async function GET(req: NextRequest) {
     }
 
     const transactions = await prisma.transaction.findMany({
+        where: { userId },
         orderBy: { date: 'desc' },
     });
 

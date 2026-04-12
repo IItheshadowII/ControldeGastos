@@ -18,8 +18,6 @@ export async function POST(req: NextRequest) {
         const response = NextResponse.json({
             ok: true,
             user: session.user,
-            // Devolvemos también el token para que el cliente pueda reforzar la cookie si hace falta
-            sessionToken: session.sessionToken,
         })
 
         response.cookies.set(SESSION_COOKIE_NAME, session.sessionToken, {
@@ -27,7 +25,7 @@ export async function POST(req: NextRequest) {
             sameSite: "lax",
             // Mantenerlo en false para evitar bucles de login cuando el sitio corre sin HTTPS
             // (algunos proxies terminan SSL y el backend puede quedar en HTTP).
-            secure: false,
+            secure: process.env.NODE_ENV === 'production',
             path: "/",
             maxAge: 60 * 60 * 24 * 30,
             expires: new Date(session.expires),
