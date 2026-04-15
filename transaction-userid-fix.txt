@@ -1,0 +1,90 @@
+Instrucciones para aplicar el cambio "transaction userId fix"
+
+1) Resumen
+He modificado `src/app/api/transactions/route.ts` para que:
+- Use `auth()` y obtenga `session.user.id`.
+- Añada `userId` al crear transacciones.
+- Filtre el `GET` para devolver solo las transacciones del usuario autenticado.
+
+2) Contenido actualizado del archivo (reemplaza el archivo en tu clone y haz commit):
+
+--- BEGIN FILE: src/app/api/transactions/route.ts ---
+
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import prisma from "@/lib/prisma";
+
+export async function POST(req: NextRequest) {
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const data = await req.json().catch(() => ({}));
+
+    const transaction = await prisma.transaction.create({
+        data: {
+            ...data,
+            userId: session.user.id,
+            date: new Date(),
+        },
+    });
+
+    return NextResponse.json(transaction);
+}
+
+export async function GET(req: NextRequest) {
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json([], { status: 200 })
+
+    const transactions = await prisma.transaction.findMany({
+        where: { userId: session.user.id },
+        orderBy: { date: 'desc' },
+    });
+
+    return NextResponse.json(transactions);
+}
+
+--- END FILE ---
+
+3) Pasos para aplicar el cambio en tu clon local y pushear a GitHub
+
+Asumiendo que en tu máquina ya tienes el repo clonado en `E:\Ruta\A\WebApp` o similar, y que `origin` está configurado con `https://github.com/IItheshadowII/WebApp.git`.
+
+En PowerShell en la raíz del repo clonado:
+
+```powershell
+# Opcional: crea y cambia a una rama nueva
+git checkout -b fix/transactions-userid
+
+# Reemplaza el archivo con el contenido anterior (puedes editar con VSCode o usar redirección)
+# Por ejemplo, desde la carpeta `WebApp`:
+# Guarda este archivo transaction-userid-fix.txt en la misma carpeta y luego:
+Set-Content -Path .\src\app\api\transactions\route.ts -Value (Get-Content -Raw .\transaction-userid-fix.txt -Encoding UTF8 | Select-String -Pattern "--- BEGIN FILE: src/app/api/transactions/route.ts ---" -NotMatch -Context 0,0).Line
+
+# (Si prefieres hacerlo manualmente, abre VSCode, pega el contenido y guarda)
+
+# Añade, commit y push
+git add src/app/api/transactions/route.ts
+git commit -m "API: associate transaction with session userId and protect routes"
+# Empuja la rama
+git push -u origin HEAD
+```
+
+Si el comando `Set-Content ...` resulta confuso, abre `transaction-userid-fix.txt` en tu editor, copia el bloque entre `--- BEGIN FILE` y `--- END FILE` (solo el contenido del archivo) y pega en `src/app/api/transactions/route.ts`.
+
+4) Alternativa: aplicar el parche con `git apply`
+Si prefieres crear un patch unificado, puedo generarlo y te lo doy; luego en tu clon podrías ejecutar:
+
+```powershell
+git apply transaction-userid-fix.patch
+git add -A
+git commit -m "API: associate transaction with session userId and protect routes"
+git push
+```
+
+5) Después del push
+- Ve a Easypanel y despliega la nueva versión (Implementaciones -> Implementar).
+- Verifica que la variable `DATABASE_URL` de tu servicio web apunte correctamente a `db-gastos` dentro de la red de Easypanel:
+  `postgresql://web_gastos:Cerberus159951%21@db-gastos:5432/web_gastos?schema=public`
+- Revisa logs del servicio web en Easypanel mientras intentas crear un gasto o cambiar contraseña.
+
+Si quieres, genero también el parche `.patch` y lo dejo en `WebApp/transaction-userid-fix.patch` para que lo apliques con `git apply`. ¿Lo genero ahora?
