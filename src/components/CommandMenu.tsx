@@ -9,9 +9,15 @@ import { useRouter } from 'next/navigation'
 interface CommandMenuProps {
     isOpen: boolean
     onClose: () => void
+interface CommandMenuProps {
+    isOpen: boolean
+    onClose: () => void
+    onAddExpense?: () => void
+    onAddIncome?: () => void
+    onAddLoan?: () => void
 }
 
-export const CommandMenu = ({ isOpen, onClose }: CommandMenuProps) => {
+export const CommandMenu = ({ isOpen, onClose, onAddExpense, onAddIncome, onAddLoan }: CommandMenuProps) => {
     const router = useRouter()
     const [search, setSearch] = useState('')
 
@@ -102,13 +108,18 @@ export const CommandMenu = ({ isOpen, onClose }: CommandMenuProps) => {
                                         icon={<DollarSign className="w-5 h-5" />}
                                         label="Registrar Gasto"
                                         shortcut="⌘E"
-                                        onSelect={() => handleSelect(() => console.log('Open expense modal'))}
+                                        onSelect={() => handleSelect(() => onAddIncome?.())}
                                     />
                                     <CommandItem
                                         icon={<TrendingUp className="w-5 h-5" />}
                                         label="Registrar Ingreso"
                                         shortcut="⌘I"
-                                        onSelect={() => handleSelect(() => console.log('Open income modal'))}
+                                    <CommandItem
+                                        icon={<Wallet className="w-5 h-5" />}
+                                        label="Registrar Préstamo"
+                                        shortcut="⌘P"
+                                        onSelect={() => handleSelect(() => onAddLoan?.())}
+                                    />
                                     />
                                 </Command.Group>
                             </Command.List>

@@ -60,19 +60,24 @@ model VerificationToken {
 
 
 model Transaction {
-  id          String           @id @default(cuid())
-  userId      String
-  description String
-  amount      Float
-  currency    String           @default("ARS")
-  type        String
-  incomeType  String?      // Only for income
-  frequency   String           @default("VARIABLE") // Fixed or Variable
-  isPaid      Boolean          @default(false) // Payment status (for expenses)
-  isSavings   Boolean          @default(false)
-  date        DateTime         @default(now())
-  category    String?
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  userId           String
+  description      String
+  amount           Float
+  currency         String   @default("ARS")
+  type             String
+  incomeType       String?  // Only for income
+  frequency        String   @default("VARIABLE") // Fixed or Variable
+  isPaid           Boolean  @default(false) // Payment status (for expenses or loans)
+  isSavings        Boolean  @default(false)
+  loanType         String?  // "LENT" = presté dinero / "BORROWED" = me prestaron
+  loanStatus       String?  // "PENDING" / "PAID"
+  loanParty        String?
+  loanInstallments Int?
+  loanNotes        String?
+  date             DateTime @default(now())
+  category         String?
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AIConfig {

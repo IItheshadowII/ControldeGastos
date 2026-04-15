@@ -25,6 +25,10 @@ export async function PATCH(
     if (typeof data.description === 'string') {
         updateData.description = data.description;
     }
+    if (typeof data.type === 'string') {
+        const normalizedType = data.type.toUpperCase()
+        if (normalizedType === 'INCOME' || normalizedType === 'EXPENSE' || normalizedType === 'LOAN') updateData.type = normalizedType
+    }
     if (data.currency === 'ARS' || data.currency === 'USD') {
         updateData.currency = data.currency;
     }
@@ -39,6 +43,26 @@ export async function PATCH(
     }
     if (typeof data.isSavings !== 'undefined') {
         updateData.isSavings = !!data.isSavings;
+    }
+    if (typeof data.loanType === 'string') {
+        const normalizedLoanType = data.loanType.toUpperCase()
+        if (normalizedLoanType === 'LENT' || normalizedLoanType === 'BORROWED') updateData.loanType = normalizedLoanType
+    }
+    if (typeof data.loanStatus === 'string') {
+        const normalizedLoanStatus = data.loanStatus.toUpperCase()
+        if (normalizedLoanStatus === 'PENDING' || normalizedLoanStatus === 'PAID') updateData.loanStatus = normalizedLoanStatus
+    }
+    if (typeof data.loanParty === 'string' || data.loanParty === null) {
+        updateData.loanParty = data.loanParty;
+    }
+    if (typeof data.loanInstallments === 'number' && Number.isInteger(data.loanInstallments)) {
+        updateData.loanInstallments = data.loanInstallments;
+    }
+    if (typeof data.loanNotes === 'string' || data.loanNotes === null) {
+        updateData.loanNotes = data.loanNotes;
+    }
+    if (typeof data.date === 'string' && !Number.isNaN(new Date(data.date).getTime())) {
+        updateData.date = new Date(data.date);
     }
 
     const updated = await prisma.transaction.update({

@@ -43,6 +43,7 @@ export default function DashboardPage() {
     // Modal States
     const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
     const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false)
+    const [isLoanModalOpen, setIsLoanModalOpen] = useState(false)
     const [isAIModalOpen, setIsAIModalOpen] = useState(false)
     const [isReportModalOpen, setIsReportModalOpen] = useState(false)
     const [isSavingsModalOpen, setIsSavingsModalOpen] = useState(false)
@@ -162,12 +163,19 @@ export default function DashboardPage() {
         loadRate()
     }, [])
 
-    const handleTogglePaid = async (transactionId: string, currentStatus: boolean) => {
+    const handleTogglePaid = async (transactionId: string, currentStatus: boolean, loanStatus?: string) => {
         try {
+            const body = loanStatus
+                ? {
+                    loanStatus: loanStatus === 'PAID' ? 'PENDING' : 'PAID',
+                    isPaid: loanStatus !== 'PAID',
+                }
+                : { isPaid: !currentStatus }
+
             await fetch(`/api/transactions/${transactionId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isPaid: !currentStatus })
+                body: JSON.stringify(body),
             })
             fetchData()
         } catch (error) {
@@ -288,11 +296,42 @@ export default function DashboardPage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <ActionButton onClick={() => setIsExpenseModalOpen(true)} icon={<Plus className="w-5 h-5" />} label="Gasto" color="rose" />
                                         <ActionButton onClick={() => setIsIncomeModalOpen(true)} icon={<Wallet className="w-5 h-5" />} label="Ingreso" color="emerald" />
+<<<<<<< HEAD
+=======
+                                        <ActionButton onClick={() => setIsLoanModalOpen(true)} icon={<Sparkles className="w-5 h-5" />} label="Préstamo" color="violet" />
+>>>>>>> master
                                         <ActionButton onClick={() => setIsAIModalOpen(true)} icon={<ImageIcon className="w-5 h-5" />} label="Scan Ticket IA" color="blue" full />
                                         <ActionButton onClick={() => setIsReportModalOpen(true)} icon={<FileText className="w-5 h-5" />} label="Generar Reporte" color="indigo" full />
                                     </div>
                                 </Card>
 
+                                <Card className="p-6 border-dashed border-violet-500/10 bg-gradient-to-br from-violet-500/5 to-transparent">
+                                    <div className="flex items-start justify-between mb-6 gap-4">
+                                        <div>
+                                            <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-2">Préstamos</p>
+                                            <h3 className="text-2xl font-bold text-white">Control de Deudas</h3>
+                                        </div>
+                                        <div className="p-3 rounded-2xl bg-violet-500/10 text-violet-300">
+                                            <Sparkles className="w-6 h-6" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <div className="p-5 rounded-3xl bg-white/5 border border-violet-500/10">
+                                            <p className="text-[10px] uppercase tracking-[0.2em] text-violet-300/70 mb-2">Total a cobrar</p>
+                                            <p className="text-3xl font-bold text-violet-100">$ {transactions.filter(t => t.loanType === 'LENT' && t.loanStatus === 'PENDING').reduce((acc, t) => {
+                                                const rate = usdRate > 0 ? usdRate : 1
+                                                return acc + (t.currency === 'USD' ? t.amount * rate : t.amount)
+                                            }, 0).toLocaleString()}</p>
+                                        </div>
+                                        <div className="p-5 rounded-3xl bg-white/5 border border-violet-500/10">
+                                            <p className="text-[10px] uppercase tracking-[0.2em] text-violet-300/70 mb-2">Total a pagar</p>
+                                            <p className="text-3xl font-bold text-violet-100">$ {transactions.filter(t => t.loanType === 'BORROWED' && t.loanStatus === 'PENDING').reduce((acc, t) => {
+                                                const rate = usdRate > 0 ? usdRate : 1
+                                                return acc + (t.currency === 'USD' ? t.amount * rate : t.amount)
+                                            }, 0).toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                </Card>
                                 <Card className="p-0 overflow-hidden flex flex-col h-[400px]">
                                     <div className="p-6 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
                                         <h4 className="text-xs font-bold text-white/30 uppercase tracking-wider">Últimos Movimientos</h4>
@@ -302,27 +341,28 @@ export default function DashboardPage() {
                                         {transactions.slice(0, 10).map((t: any) => (
                                             <div key={t.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-white/5 transition-colors group border border-transparent hover:border-white/5">
                                                 <div className="flex items-center gap-4">
-                                                    <div className={`p-2 rounded-full ${t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                                                        {t.type === 'INCOME' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                                                    <div className={`p-2 rounded-full ${t.loanType ? 'bg-violet-500/10 text-violet-300' : t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                                                        {t.loanType ? <Sparkles className="w-4 h-4" /> : t.type === 'INCOME' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                                                    </div>
                                                     </div>
                                                     <div className="flex flex-col">
                                                         <span className="text-sm font-bold text-white/90 group-hover:text-white">
                                                             {t.description || 'Sin descripción'}
                                                         </span>
                                                         <span className="text-[10px] text-white/40">
-                                                            {(t.category && t.category.toLowerCase()) || 'Varios'} · {new Date(t.date).toLocaleDateString()}
+                                                            {t.loanType ? `${t.loanParty || 'Préstamo'} · ${t.loanStatus || 'Pendiente'}` : (t.category && t.category.toLowerCase()) || 'Varios'} · {new Date(t.date).toLocaleDateString()}
                                                         </span>
                                                     </div>
                                                 </div>
 
                                                 <div className="flex items-center gap-4">
-                                                    <span className={`text-sm font-bold ${t.type === 'INCOME' ? 'text-emerald-400' : 'text-white/60'}`}>
+                                                    <span className={`text-sm font-bold ${t.loanType ? 'text-violet-300' : t.type === 'INCOME' ? 'text-emerald-400' : 'text-white/60'}`}>
                                                         {t.currency === 'USD' ? 'U$D' : '$'} {t.amount.toLocaleString()}
                                                     </span>
 
                                                     <div className="flex items-center gap-2">
-                                                        <button onClick={() => handleTogglePaid(t.id, t.isPaid)} className={`p-2 rounded-lg border ${t.isPaid ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-white/40'}`} title={t.isPaid ? 'Desmarcar pagado' : 'Marcar como pagado'}>
-                                                            {t.isPaid ? <CheckCircle2 className="w-4 h-4" /> : <Wallet className="w-4 h-4" />}
+                                                        <button onClick={() => handleTogglePaid(t.id, t.isPaid, t.loanStatus)} className={`p-2 rounded-lg border ${t.isPaid || t.loanStatus === 'PAID' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-white/40'}`} title={t.isPaid || t.loanStatus === 'PAID' ? 'Desmarcar pagado' : 'Marcar como pagado'}>
+                                                            {t.isPaid || t.loanStatus === 'PAID' ? <CheckCircle2 className="w-4 h-4" /> : <Wallet className="w-4 h-4" />}
                                                         </button>
                                                         <button onClick={() => handleToggleSavings(t.id, t.isSavings)} className={`p-2 rounded-lg border ${t.isSavings ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-white/40'}`} title={t.isSavings ? 'Quitar ahorro' : 'Marcar como ahorro'}>
                                                             <PiggyBank className="w-4 h-4" />
@@ -473,6 +513,14 @@ export default function DashboardPage() {
                         }} />
                     </Modal>
                 )}
+                {isLoanModalOpen && (
+                    <Modal isOpen={isLoanModalOpen} onClose={() => setIsLoanModalOpen(false)} title="Registrar Préstamo">
+                        <TransactionForm type="LOAN" onSuccess={() => {
+                            setIsLoanModalOpen(false)
+                            fetchData()
+                        }} />
+                    </Modal>
+                )}
                 {isAIModalOpen && (
                     <Modal isOpen={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} title="Escanear Ticket con IA">
                         <div className="space-y-6">
@@ -498,10 +546,10 @@ export default function DashboardPage() {
                     <Modal
                         isOpen={isEditModalOpen}
                         onClose={() => { setIsEditModalOpen(false); setEditingTransaction(null) }}
-                        title={editingTransaction.type === 'INCOME' ? 'Editar Ingreso' : 'Editar Gasto'}
+                        title={editingTransaction.loanType ? 'Editar Préstamo' : editingTransaction.type === 'INCOME' ? 'Editar Ingreso' : 'Editar Gasto'}
                     >
                         <TransactionForm
-                            type={editingTransaction.type}
+                            type={editingTransaction.loanType ? 'LOAN' : editingTransaction.type}
                             mode="edit"
                             transaction={editingTransaction}
                             onSuccess={() => {
@@ -522,7 +570,13 @@ export default function DashboardPage() {
             </AnimatePresence>
 
             {/* Command Menu */}
-            <CommandMenu isOpen={isCommandMenuOpen} onClose={() => setIsCommandMenuOpen(false)} />
+            <CommandMenu
+                isOpen={isCommandMenuOpen}
+                onClose={() => setIsCommandMenuOpen(false)}
+                onAddExpense={() => setIsExpenseModalOpen(true)}
+                onAddIncome={() => setIsIncomeModalOpen(true)}
+                onAddLoan={() => setIsLoanModalOpen(true)}
+            />
 
             {/* Mobile Navigation */}
             <MobileNav onAddClick={() => setIsExpenseModalOpen(true)} onSavingsClick={() => setIsSavingsModalOpen(true)} />
@@ -681,6 +735,7 @@ function ActionButton({ onClick, icon, label, color, full = false }: any) {
         emerald: "hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:shadow-[0_0_30px_-5px_rgba(16,185,129,0.2)] text-emerald-400",
         blue: "hover:bg-blue-500/10 hover:border-blue-500/30 hover:shadow-[0_0_30px_-5px_rgba(59,130,246,0.2)] text-blue-400",
         indigo: "hover:bg-indigo-500/10 hover:border-indigo-500/30 hover:shadow-[0_0_30px_-5px_rgba(79,70,229,0.2)] text-indigo-400",
+        violet: "hover:bg-violet-500/10 hover:border-violet-500/30 hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.2)] text-violet-400",
     }
 
     return (
@@ -713,18 +768,23 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
     const [selectedMonth, setSelectedMonth] = useState<string>('')
 
     const filtered = transactions.filter(t => {
+        const isLoan = !!t.loanType
+
         // Filter by Type
-        const typeMatch = filter === 'ALL' || t.type === filter
+        const typeMatch = filter === 'ALL'
+            || (filter === 'LOAN' && isLoan)
+            || (filter !== 'LOAN' && filter !== 'ALL' && !isLoan && t.type === filter)
 
         // Filter by Payment Status
-        const paymentMatch = paymentFilter === 'ALL' ||
-            (paymentFilter === 'PAID' && t.isPaid) ||
-            (paymentFilter === 'PENDING' && !t.isPaid && t.type === 'EXPENSE')
+        const paymentMatch = paymentFilter === 'ALL'
+            || (paymentFilter === 'PAID' && ((isLoan && t.loanStatus === 'PAID') || (!isLoan && t.isPaid)))
+            || (paymentFilter === 'PENDING' && ((isLoan && t.loanStatus === 'PENDING') || (!isLoan && !t.isPaid && t.type === 'EXPENSE')))
 
         // Filter by Search Term
         const searchMatch = searchTerm === '' ||
             t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (t.category && t.category.toLowerCase().includes(searchTerm.toLowerCase()))
+            (t.category && t.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (t.loanParty && t.loanParty.toLowerCase().includes(searchTerm.toLowerCase()))
 
         // Filter by Month
         const date = new Date(t.date)
@@ -734,12 +794,19 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
         return typeMatch && paymentMatch && searchMatch && monthMatch
     })
 
-    const handleTogglePaid = async (transactionId: string, currentStatus: boolean) => {
+    const handleTogglePaid = async (transactionId: string, currentStatus: boolean, loanStatus?: string) => {
         try {
+            const body = loanStatus
+                ? {
+                    loanStatus: loanStatus === 'PAID' ? 'PENDING' : 'PAID',
+                    isPaid: loanStatus !== 'PAID',
+                }
+                : { isPaid: !currentStatus }
+
             await fetch(`/api/transactions/${transactionId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isPaid: !currentStatus })
+                body: JSON.stringify(body)
             })
             if (onUpdate) onUpdate()
             else window.location.reload()
@@ -808,13 +875,13 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
 
                 <div className="flex flex-wrap items-center gap-4">
                     <div className="flex gap-2">
-                        {['ALL', 'INCOME', 'EXPENSE'].map((f) => (
+                        {['ALL', 'INCOME', 'EXPENSE', 'LOAN'].map((f) => (
                             <button
                                 key={f}
                                 onClick={() => setFilter(f)}
                                 className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider border transition-all ${filter === f ? 'bg-white text-black border-white' : 'bg-transparent text-white/40 border-white/10 hover:border-white/30'}`}
                             >
-                                {f === 'ALL' ? 'Todos' : f === 'INCOME' ? 'Ingresos' : 'Gastos'}
+                                {f === 'ALL' ? 'Todos' : f === 'INCOME' ? 'Ingresos' : f === 'EXPENSE' ? 'Gastos' : 'Préstamos'}
                             </button>
                         ))}
                     </div>
@@ -855,7 +922,18 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
                         {filtered.map((t) => (
                             <tr key={t.id} className="hover:bg-white/[0.01] transition-colors group">
                                 <td className="p-4">
-                                    {t.type === 'EXPENSE' && (
+                                    {t.loanType ? (
+                                        <button
+                                            onClick={() => handleTogglePaid(t.id, t.isPaid, t.loanStatus)}
+                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${t.loanStatus === 'PAID'
+                                                ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+                                                : 'bg-violet-500/10 text-violet-300 hover:bg-violet-500/20'
+                                                }`}
+                                        >
+                                            <div className={`w-2 h-2 rounded-full ${t.loanStatus === 'PAID' ? 'bg-emerald-500' : 'bg-violet-500'}`} />
+                                            {t.loanStatus === 'PAID' ? 'Pagado' : 'Pendiente'}
+                                        </button>
+                                    ) : t.type === 'EXPENSE' ? (
                                         <button
                                             onClick={() => handleTogglePaid(t.id, t.isPaid)}
                                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${t.isPaid
@@ -866,8 +944,7 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
                                             <div className={`w-2 h-2 rounded-full ${t.isPaid ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                             {t.isPaid ? 'Pagado' : 'Pendiente'}
                                         </button>
-                                    )}
-                                    {t.type === 'INCOME' && (
+                                    ) : (
                                         <span className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400/60">
                                             <div className="w-2 h-2 rounded-full bg-emerald-500" />
                                             Ingreso
@@ -876,8 +953,8 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
                                 </td>
                                 <td className="p-4 text-white/30 font-mono text-[11px]">{new Date(t.date).toLocaleDateString()}</td>
                                 <td className="p-4 text-white/80 group-hover:text-white transition-colors">{t.description || '-'}</td>
-                                <td className="p-4 capitalize opacity-40 text-xs">{t.category?.toLowerCase() || 'General'}</td>
-                                <td className={`p-4 text-right font-bold ${t.type === 'INCOME' ? 'text-emerald-400' : 'text-white'}`}>
+                                <td className="p-4 capitalize opacity-40 text-xs">{t.loanType ? `${t.loanParty || 'Préstamo'}` : t.category?.toLowerCase() || 'General'}</td>
+                                <td className={`p-4 text-right font-bold ${t.loanType ? 'text-violet-300' : t.type === 'INCOME' ? 'text-emerald-400' : 'text-white'}`}>
                                     {t.type === 'INCOME' ? '+' : '-'} {t.currency === 'USD' ? 'U$D' : '$'} {t.amount.toLocaleString()}
                                 </td>
                                 <td className="p-4 text-right flex items-center justify-end gap-2">

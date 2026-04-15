@@ -50,19 +50,32 @@ export async function POST(req: NextRequest) {
     const allowedFields: Record<string, unknown> = {};
     if (typeof data.description === 'string') allowedFields.description = data.description;
     if (typeof data.category === 'string') allowedFields.category = data.category;
-    if (typeof data.type === 'string' && ['income', 'expense'].includes(data.type)) allowedFields.type = data.type;
+
+    const rawType = typeof data.type === 'string' ? data.type.toUpperCase() : null;
+    if (rawType === 'INCOME' || rawType === 'EXPENSE' || rawType === 'LOAN') {
+        allowedFields.type = rawType;
+    }
+
     if (typeof data.currency === 'string' && ['ARS', 'USD'].includes(data.currency)) allowedFields.currency = data.currency;
     if (typeof data.frequency === 'string') allowedFields.frequency = data.frequency;
     if (typeof data.incomeType === 'string') allowedFields.incomeType = data.incomeType;
     if (typeof data.isPaid === 'boolean') allowedFields.isPaid = data.isPaid;
     if (typeof data.isSavings === 'boolean') allowedFields.isSavings = data.isSavings;
+    if (typeof data.loanType === 'string' && ['LENT', 'BORROWED'].includes(data.loanType.toUpperCase())) allowedFields.loanType = data.loanType.toUpperCase();
+    if (typeof data.loanStatus === 'string' && ['PENDING', 'PAID'].includes(data.loanStatus.toUpperCase())) allowedFields.loanStatus = data.loanStatus.toUpperCase();
+    if (typeof data.loanParty === 'string') allowedFields.loanParty = data.loanParty;
+    if (typeof data.loanInstallments === 'number' && Number.isInteger(data.loanInstallments)) allowedFields.loanInstallments = data.loanInstallments;
+    if (typeof data.loanNotes === 'string') allowedFields.loanNotes = data.loanNotes;
+    if (typeof data.date === 'string' && !Number.isNaN(new Date(data.date).getTime())) {
+        allowedFields.date = new Date(data.date);
+    }
 
     const transaction = await prisma.transaction.create({
         data: {
             ...allowedFields,
             amount: amountNumber,
             userId,
-            date: new Date(),
+            date: allowedFields.date ? allowedFields.date as Date : new Date(),
         },
     });
 
