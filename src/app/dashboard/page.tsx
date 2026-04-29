@@ -13,7 +13,7 @@ import {
     FileText, TrendingUp, LayoutDashboard, Database, PieChart,
     Activity, ChevronLeft, ChevronRight, Menu, X, ArrowUpRight,
     ArrowDownRight, Search, Calendar, Filter, AlertCircle, Trash2, Edit3,
-    Users,
+    Users, Sparkles,
 } from 'lucide-react'
 import { CheckCircle2 } from 'lucide-react'
 import { PiggyBank } from 'lucide-react'
@@ -296,10 +296,7 @@ export default function DashboardPage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <ActionButton onClick={() => setIsExpenseModalOpen(true)} icon={<Plus className="w-5 h-5" />} label="Gasto" color="rose" />
                                         <ActionButton onClick={() => setIsIncomeModalOpen(true)} icon={<Wallet className="w-5 h-5" />} label="Ingreso" color="emerald" />
-<<<<<<< HEAD
-=======
                                         <ActionButton onClick={() => setIsLoanModalOpen(true)} icon={<Sparkles className="w-5 h-5" />} label="Préstamo" color="violet" />
->>>>>>> master
                                         <ActionButton onClick={() => setIsAIModalOpen(true)} icon={<ImageIcon className="w-5 h-5" />} label="Scan Ticket IA" color="blue" full />
                                         <ActionButton onClick={() => setIsReportModalOpen(true)} icon={<FileText className="w-5 h-5" />} label="Generar Reporte" color="indigo" full />
                                     </div>
@@ -343,7 +340,6 @@ export default function DashboardPage() {
                                                 <div className="flex items-center gap-4">
                                                     <div className={`p-2 rounded-full ${t.loanType ? 'bg-violet-500/10 text-violet-300' : t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
                                                         {t.loanType ? <Sparkles className="w-4 h-4" /> : t.type === 'INCOME' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                                                    </div>
                                                     </div>
                                                     <div className="flex flex-col">
                                                         <span className="text-sm font-bold text-white/90 group-hover:text-white">

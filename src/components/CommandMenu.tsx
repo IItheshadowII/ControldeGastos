@@ -3,12 +3,9 @@
 import React, { useEffect, useState } from 'react'
 import { Command } from 'cmdk'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, DollarSign, TrendingUp, Settings, FileText, Home, X } from 'lucide-react'
+import { Search, DollarSign, TrendingUp, Settings, FileText, Home, X, Wallet } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
-interface CommandMenuProps {
-    isOpen: boolean
-    onClose: () => void
 interface CommandMenuProps {
     isOpen: boolean
     onClose: () => void
@@ -108,18 +105,19 @@ export const CommandMenu = ({ isOpen, onClose, onAddExpense, onAddIncome, onAddL
                                         icon={<DollarSign className="w-5 h-5" />}
                                         label="Registrar Gasto"
                                         shortcut="⌘E"
-                                        onSelect={() => handleSelect(() => onAddIncome?.())}
+                                        onSelect={() => handleSelect(() => onAddExpense?.())}
                                     />
                                     <CommandItem
                                         icon={<TrendingUp className="w-5 h-5" />}
                                         label="Registrar Ingreso"
                                         shortcut="⌘I"
+                                        onSelect={() => handleSelect(() => onAddIncome?.())}
+                                    />
                                     <CommandItem
                                         icon={<Wallet className="w-5 h-5" />}
                                         label="Registrar Préstamo"
                                         shortcut="⌘P"
                                         onSelect={() => handleSelect(() => onAddLoan?.())}
-                                    />
                                     />
                                 </Command.Group>
                             </Command.List>

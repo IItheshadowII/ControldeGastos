@@ -47,18 +47,24 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
     }
 
-    const allowedFields: Record<string, unknown> = {};
-    if (typeof data.description === 'string') allowedFields.description = data.description;
-    if (typeof data.category === 'string') allowedFields.category = data.category;
-
-    const rawType = typeof data.type === 'string' ? data.type.toUpperCase() : null;
-    if (rawType === 'INCOME' || rawType === 'EXPENSE' || rawType === 'LOAN') {
-        allowedFields.type = rawType;
+    if (typeof data.description !== 'string' || data.description.trim().length < 3) {
+        return NextResponse.json({ error: 'Description is required and must be at least 3 characters long' }, { status: 400 })
     }
 
+    const rawType = typeof data.type === 'string' ? data.type.toUpperCase() : null;
+    if (rawType !== 'INCOME' && rawType !== 'EXPENSE' && rawType !== 'LOAN') {
+        return NextResponse.json({ error: 'Tipo de transacción inválido' }, { status: 400 })
+    }
+
+    const allowedFields: any = {
+        description: data.description,
+        type: rawType
+    };
+
+    if (typeof data.category === 'string') allowedFields.category = data.category;
     if (typeof data.currency === 'string' && ['ARS', 'USD'].includes(data.currency)) allowedFields.currency = data.currency;
-    if (typeof data.frequency === 'string') allowedFields.frequency = data.frequency;
-    if (typeof data.incomeType === 'string') allowedFields.incomeType = data.incomeType;
+    if (typeof data.frequency === 'string' && ['VARIABLE', 'FIXED'].includes(data.frequency.toUpperCase())) allowedFields.frequency = data.frequency.toUpperCase();
+    if (typeof data.incomeType === 'string' && ['BLANCO', 'NEGRO'].includes(data.incomeType.toUpperCase())) allowedFields.incomeType = data.incomeType.toUpperCase();
     if (typeof data.isPaid === 'boolean') allowedFields.isPaid = data.isPaid;
     if (typeof data.isSavings === 'boolean') allowedFields.isSavings = data.isSavings;
     if (typeof data.loanType === 'string' && ['LENT', 'BORROWED'].includes(data.loanType.toUpperCase())) allowedFields.loanType = data.loanType.toUpperCase();
