@@ -163,6 +163,35 @@ export default function DashboardPage() {
         loadRate()
     }, [])
 
+    // Auto-reset month when a new month starts
+    useEffect(() => {
+        const checkAndResetMonth = async () => {
+            try {
+                const now = new Date()
+                const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`
+                const lastResetMonth = localStorage.getItem('lastResetMonth')
+
+                // Only reset if we haven't reset for this month yet
+                if (lastResetMonth !== currentMonthKey) {
+                    const res = await fetch('/api/transactions/reset-month', {
+                        method: 'POST',
+                    })
+
+                    if (res.ok) {
+                        localStorage.setItem('lastResetMonth', currentMonthKey)
+                        // Refresh data after reset
+                        fetchData()
+                    }
+                }
+            } catch (e) {
+                console.error('Error auto-resetting month:', e)
+            }
+        }
+
+        checkAndResetMonth()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
     const handleTogglePaid = async (transactionId: string, currentStatus: boolean, loanStatus?: string) => {
         try {
             const body = loanStatus
