@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import OpenAI from "openai";
+import { normalizeGoogleModelName } from "@/lib/google-ai";
 
 export type AIProvider = "google" | "openai";
 
@@ -9,12 +10,6 @@ export interface TicketExtraction {
     currency: "ARS" | "USD";
     category: string;
     date?: string;
-}
-
-function normalizeGoogleModelName(modelName: string | undefined | null) {
-    const raw = (modelName || "").trim();
-    if (!raw) return "gemini-2.0-flash";
-    return raw.startsWith("models/") ? raw.slice("models/".length) : raw;
 }
 
 export async function extractTicketData(

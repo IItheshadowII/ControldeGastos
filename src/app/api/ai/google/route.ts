@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import prisma from '@/lib/prisma'
 import fs from 'fs'
 import path from 'path'
+import { DEFAULT_GOOGLE_MODEL, normalizeGoogleModelName } from '@/lib/google-ai'
 
 const DATA_DIR = path.join(process.cwd(), '.data')
 const SETTINGS_FILE = path.join(DATA_DIR, 'google_settings.json')
@@ -13,7 +14,7 @@ async function loadGoogleSettingsForUser(userId: string) {
   if (dbConfig?.apiKey) {
     return {
       apiKey: dbConfig.apiKey,
-      model: dbConfig.modelName || 'gemini-2.0-flash',
+      model: normalizeGoogleModelName(dbConfig.modelName),
       baseUrl: process.env.GOOGLE_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta',
     }
   }
@@ -22,7 +23,7 @@ async function loadGoogleSettingsForUser(userId: string) {
   if (process.env.GOOGLE_API_KEY) {
     return {
       apiKey: process.env.GOOGLE_API_KEY,
-      model: process.env.GOOGLE_MODEL || 'gemini-2.0-flash',
+      model: normalizeGoogleModelName(process.env.GOOGLE_MODEL),
       baseUrl: process.env.GOOGLE_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta',
     }
   }
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
     }
 
     const apiKey = settings.apiKey
-    const model = settings.model || 'gemini-2.0-flash'
+    const model = normalizeGoogleModelName(settings.model || DEFAULT_GOOGLE_MODEL)
     const baseUrl = settings.baseUrl || 'https://generativelanguage.googleapis.com/v1beta'
 
     if (!apiKey) {

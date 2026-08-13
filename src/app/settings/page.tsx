@@ -1,11 +1,12 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
+import { DEFAULT_GOOGLE_MODEL } from '@/lib/google-ai'
 
 export default function SettingsPage() {
   const [provider, setProvider] = useState('google')
   const [apiKey, setApiKey] = useState('')
-  const [model, setModel] = useState('gemini-2.0')
+  const [model, setModel] = useState(DEFAULT_GOOGLE_MODEL)
   const [models, setModels] = useState<string[]>([])
   const [baseUrl, setBaseUrl] = useState('https://generativelanguage.googleapis.com/v1beta')
   const [status, setStatus] = useState<string | null>(null)

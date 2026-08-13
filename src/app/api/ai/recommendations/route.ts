@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import fs from 'fs'
 import path from 'path'
+import { normalizeGoogleModelName } from '@/lib/google-ai'
 
 const DATA_DIR = path.join(process.cwd(), '.data')
 const SETTINGS_FILE = path.join(DATA_DIR, 'google_settings.json')
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
 
     try {
         const apiKey = settings.apiKey
-        const model = settings.model || 'gemini-2.0'
+        const model = normalizeGoogleModelName(settings.model)
         const baseUrl = (settings.baseUrl || 'https://generativelanguage.googleapis.com/v1beta').replace(/\/$/, '')
 
         const modelPath = model.startsWith('models/') ? model : `models/${model}`
@@ -108,7 +109,10 @@ export async function GET(req: NextRequest) {
         const data = await res.json()
         if (!res.ok) {
             const message = (data && data.error && (data.error.message || JSON.stringify(data.error))) || 'Respuesta no válida de la IA'
-            return NextResponse.json({ recommendations: [`Error IA: ${message}`] })
+            console.error('Error de Gemini al generar recomendaciones:', res.status, message)
+            return NextResponse.json({
+                recommendations: ['No pudimos actualizar los consejos en este momento. Intenta nuevamente más tarde.'],
+            })
         }
         const text = extractTextFromGoogleResponse(data)
         if (!text) return NextResponse.json({ recommendations: ["Error al conectar con la IA. Revisa tu API Key."] })

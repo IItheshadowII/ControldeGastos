@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { broadcastRealtime } from "@/lib/realtime";
+import { DEFAULT_GOOGLE_MODEL, normalizeGoogleModelName } from "@/lib/google-ai";
 
 export async function GET() {
     const session = await auth();
@@ -10,7 +11,7 @@ export async function GET() {
     // Config global compartida: usamos el primer registro como configuración efectiva
     const existing = await prisma.aIConfig.findFirst();
     if (!existing) {
-        return NextResponse.json({ provider: "google", apiKey: "", modelName: "" });
+        return NextResponse.json({ provider: "google", apiKey: "", modelName: DEFAULT_GOOGLE_MODEL });
     }
 
     const maskedKey = existing.apiKey
@@ -20,7 +21,7 @@ export async function GET() {
     return NextResponse.json({
         provider: existing.provider,
         apiKey: maskedKey,
-        modelName: existing.modelName || "",
+        modelName: normalizeGoogleModelName(existing.modelName),
         hasKey: !!existing.apiKey,
     });
 }
@@ -30,16 +31,17 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { provider, apiKey, modelName } = await req.json();
+    const normalizedModelName = provider === "google" ? normalizeGoogleModelName(modelName) : modelName;
 
     const existing = await prisma.aIConfig.findFirst({ where: { userId: session.user.id } });
     if (existing) {
         await prisma.aIConfig.update({
             where: { id: existing.id },
-            data: { provider, apiKey, modelName },
+            data: { provider, apiKey, modelName: normalizedModelName },
         });
     } else {
         await prisma.aIConfig.create({
-            data: { userId: session.user.id, provider, apiKey, modelName },
+            data: { userId: session.user.id, provider, apiKey, modelName: normalizedModelName },
         });
     }
 

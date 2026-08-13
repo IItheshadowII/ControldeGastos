@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { extractTicketData, type AIProvider } from "@/lib/ai-service";
 import fs from "fs";
 import path from "path";
+import { DEFAULT_GOOGLE_MODEL } from "@/lib/google-ai";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
 const SETTINGS_FILE = path.join(DATA_DIR, "google_settings.json");
@@ -50,7 +51,7 @@ async function loadTicketAiConfigForUser(userId: string) {
         return {
             provider: "google" as const,
             apiKey: String(process.env.GOOGLE_API_KEY),
-            modelName: process.env.GOOGLE_MODEL || "gemini-2.0-flash",
+            modelName: process.env.GOOGLE_MODEL || DEFAULT_GOOGLE_MODEL,
         };
     }
     if (process.env.OPENAI_API_KEY) {
