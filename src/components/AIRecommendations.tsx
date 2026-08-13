@@ -13,7 +13,20 @@ export const AIRecommendations = () => {
         try {
             const res = await fetch('/api/ai/recommendations')
             const data = await res.json()
-            setRecommendations(data.recommendations || [])
+            const raw = data.recommendations
+            if (Array.isArray(raw)) {
+                setRecommendations(raw.flatMap((item) => {
+                    if (typeof item !== 'string') return []
+                    try {
+                        const parsed = JSON.parse(item)
+                        return Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : [item]
+                    } catch {
+                        return [item]
+                    }
+                }))
+            } else {
+                setRecommendations(typeof raw === 'string' ? [raw] : [])
+            }
         } catch (e) {
             console.error(e)
         } finally {
@@ -28,31 +41,31 @@ export const AIRecommendations = () => {
     }, [])
 
     return (
-        <Card className="h-full border-blue-500/20 bg-blue-500/5">
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold flex items-center gap-2">
+        <Card className="h-full !p-5 !rounded-[20px] border-blue-500/20 bg-blue-500/5">
+            <div className="flex justify-between items-center mb-4 gap-3">
+                <h3 className="text-lg font-bold flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-blue-400" /> IA Consejero
                 </h3>
                 <Button
                     variant="secondary"
                     onClick={fetchRecommendations}
-                    className="text-xs py-1 px-3"
+                    className="!text-[9px] !py-1.5 !px-3 !rounded-lg"
                     disabled={loading}
                 >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Actualizar'}
                 </Button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-2">
                 {recommendations.length > 0 ? (
                     recommendations.map((rec, i) => (
-                        <div key={i} className="flex gap-3 p-3 bg-white/5 rounded-xl border border-white/5 text-sm">
+                        <div key={i} className="flex gap-3 p-3 bg-white/5 rounded-xl border border-white/5 text-sm leading-relaxed">
                             <div className="mt-1"><ArrowRight className="w-4 h-4 text-blue-400" /></div>
                             <p className="opacity-80">{rec}</p>
                         </div>
                     ))
                 ) : (
-                    <div className="text-center py-8 opacity-40">
+                    <div className="text-center py-5 opacity-40">
                         <p className="text-sm">¿Necesitas ayuda con tus finanzas?</p>
                         <p className="text-xs">Usa el botón para obtener consejos personalizados.</p>
                     </div>

@@ -178,7 +178,7 @@ export const DashboardStats = ({ transactions, usdRate = 1 }: DashboardStatsProp
 
     return (
         <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4">
                 {statCards.map((stat) => (
                     <StatCard key={stat.label} {...stat} />
                 ))}
@@ -231,9 +231,9 @@ const StatCard = ({ label, value, icon: Icon, color, trend, delay, actions }: St
     }
 
     return (
-        <Card delay={delay} className="!p-6 group hover:scale-[1.02] transition-transform">
-            <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-xl bg-gradient-to-br ${colors[color]}`}>
+        <Card delay={delay} className="!p-5 !rounded-[20px] group">
+            <div className="flex items-start justify-between mb-5">
+                <div className={`p-2.5 rounded-[11px] bg-gradient-to-br ${colors[color]}`}>
                     <Icon className="w-5 h-5" />
                 </div>
                 <div className="flex items-center gap-2">
@@ -247,7 +247,7 @@ const StatCard = ({ label, value, icon: Icon, color, trend, delay, actions }: St
                 <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/40">
                     {label}
                 </p>
-                <p className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+                <p className="text-2xl font-bold tracking-tight text-white truncate">
                     {value}
                 </p>
             </div>

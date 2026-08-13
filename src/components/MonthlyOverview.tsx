@@ -58,11 +58,11 @@ export const MonthlyOverview = ({ transactions, usdRate = 1 }: { transactions: a
     const balance = paidIncomeTotalARS - paidExpensesTotalARS
 
     return (
-        <Card className="h-full !p-0 !bg-zinc-950/20 shadow-none border-white/[0.03] overflow-hidden flex flex-col group">
+        <Card className="!p-0 !rounded-[20px] !bg-zinc-950/20 shadow-none border-white/[0.07] overflow-hidden flex flex-col group">
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.01] to-transparent pointer-events-none" />
 
             {/* Header */}
-            <div className="p-4 md:p-8 border-b border-white/5 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 relative z-10 bg-white/[0.01]">
+            <div className="p-4 md:px-5 md:py-4 border-b border-white/[0.07] flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 relative z-10 bg-white/[0.01]">
                 <div className="space-y-1">
                     <p className="text-[10px] uppercase font-bold tracking-[0.3em] text-white/20">Análisis Mensual</p>
                     <h3 className="text-xl md:text-2xl font-bold tracking-tight">
@@ -81,7 +81,7 @@ export const MonthlyOverview = ({ transactions, usdRate = 1 }: { transactions: a
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y md:divide-y-0 md:divide-x lg:divide-x divide-white/5 flex-1 relative z-10">
 
                 {/* Col 1: Ingresos */}
-                <div className="p-4 md:p-8 space-y-6 md:space-y-8 bg-emerald-500/[0.01]">
+                <div className="p-4 md:p-5 space-y-5 bg-emerald-500/[0.01]">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
                             <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-emerald-500/40">Total Ingresos</p>
@@ -92,14 +92,14 @@ export const MonthlyOverview = ({ transactions, usdRate = 1 }: { transactions: a
                         </div>
                     </div>
 
-                    <div className="space-y-4 md:space-y-6">
+                    <div className="space-y-4">
                         <SectionBlock title="Flujos en Blanco" items={incomeBlanco} color="text-emerald-400" />
                         <SectionBlock title="Flujos en Negro" items={incomeNegro} color="text-emerald-400/60" />
                     </div>
                 </div>
 
                 {/* Col 2: Gastos Fijos */}
-                <div className="p-4 md:p-8 space-y-6 md:space-y-8 bg-rose-500/[0.01]">
+                <div className="p-4 md:p-5 space-y-5 bg-rose-500/[0.01]">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
                             <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-rose-500/40">Fijos Mensuales</p>
@@ -110,7 +110,7 @@ export const MonthlyOverview = ({ transactions, usdRate = 1 }: { transactions: a
                         </div>
                     </div>
 
-                    <div className="space-y-1 max-h-[250px] md:max-h-[350px] overflow-y-auto custom-scrollbar pr-2">
+                    <div className="space-y-1 max-h-[270px] overflow-y-auto custom-scrollbar pr-1">
                         {expensesFixed.length > 0 ? expensesFixed.map(t => (
                             <RowItem key={t.id} label={t.description} amount={t.amount} currency={t.currency} isPaid={t.isPaid} />
                         )) : <EmptyState label="Sin gastos fijos registrados" />}
@@ -120,7 +120,7 @@ export const MonthlyOverview = ({ transactions, usdRate = 1 }: { transactions: a
                 {/* Col 3: Extras */}
                 <div className="flex flex-col bg-zinc-900/[0.01]">
                     {/* USD Section */}
-                    <div className="p-4 md:p-8 border-b border-white/5">
+                    <div className="p-4 md:p-5 border-b border-white/5">
                         <div className="flex items-center justify-between mb-4 md:mb-6">
                             <div className="space-y-1">
                                 <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-blue-500/40">Gastos en Moneda</p>
@@ -138,7 +138,7 @@ export const MonthlyOverview = ({ transactions, usdRate = 1 }: { transactions: a
                     </div>
 
                     {/* Variables Section */}
-                    <div className="p-4 md:p-8 flex-1">
+                    <div className="p-4 md:p-5 flex-1">
                         <div className="flex items-center justify-between mb-4 md:mb-6">
                             <div className="space-y-1">
                                 <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-zinc-500/40">Gastos Adicionales</p>
@@ -179,7 +179,7 @@ const SectionBlock = ({ title, items, color }: any) => (
 )
 
 const RowItem = ({ label, amount, currency, color = "text-white/60", isPaid = true }: any) => (
-    <div className="flex items-center justify-between p-2 md:p-3 rounded-xl hover:bg-white/[0.03] transition-all group/row border border-transparent hover:border-white/5">
+    <div className="flex items-center justify-between p-2 rounded-[10px] hover:bg-white/[0.03] transition-all group/row border border-transparent hover:border-white/5">
         <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
             <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isPaid
                     ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse'

@@ -256,31 +256,31 @@ export default function DashboardPage() {
             case 'DASHBOARD':
             default:
                 return (
-                    <div className="space-y-8">
+                    <div className="space-y-5">
                         {/* Dashboard Stats Cards */}
                         <DashboardStats transactions={transactions} usdRate={usdRate} />
 
-                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                        <div className="grid min-w-0 grid-cols-1 2xl:grid-cols-[minmax(0,1.9fr)_minmax(360px,0.8fr)] gap-5">
                             {/* Main Monthly Overview Section - Replaces Chart */}
-                            <div className="xl:col-span-2 space-y-8">
-                                <div className="h-[500px]">
+                            <div className="min-w-0 space-y-5">
+                                <div>
                                     <MonthlyOverview transactions={transactions} usdRate={usdRate} />
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_0.8fr_1.4fr] gap-4">
                                     <div
                                         onClick={() => setCurrentView('TRANSACTIONS')}
-                                        className="p-8 bg-gradient-to-br from-amber-500/5 to-transparent border border-amber-500/10 hover:border-amber-500/20 transition-all group cursor-pointer rounded-3xl backdrop-blur-xl shadow-2xl"
+                                        className="p-5 min-h-[138px] bg-gradient-to-br from-amber-500/5 to-transparent border border-amber-500/10 hover:border-amber-500/20 transition-all group cursor-pointer rounded-[20px] backdrop-blur-xl shadow-2xl"
                                     >
-                                        <div className="flex items-start justify-between mb-6">
-                                            <div className="p-3 bg-amber-500/10 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                                                <AlertCircle className="w-8 h-8 text-amber-500" />
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div className="p-2 bg-amber-500/10 rounded-[11px] group-hover:scale-105 transition-transform duration-300">
+                                                <AlertCircle className="w-5 h-5 text-amber-500" />
                                             </div>
                                             <span className="text-[10px] text-amber-500/60 font-bold uppercase tracking-wider">Pendientes</span>
                                         </div>
                                         <div>
                                             <h3 className="text-xs font-bold text-white/30 uppercase tracking-widest mb-2">Gastos por Pagar</h3>
-                                            <div className="text-4xl font-bold tracking-tighter text-amber-400 mb-2">
+                                            <div className="text-2xl font-bold tracking-tighter text-amber-400 mb-1">
                                                 $ {transactions
                                                     .filter(t => t.type === 'EXPENSE' && !t.isPaid)
                                                     .reduce((acc, t) => {
@@ -299,104 +299,109 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
 
-                                    <AIRecommendations />
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <Card className="p-8 border-dashed border-white/5 bg-transparent flex flex-col justify-center gap-4 group cursor-default">
-                                        <div className="p-3 bg-emerald-500/10 w-fit rounded-xl group-hover:scale-110 transition-transform duration-300">
-                                            <TrendingUp className="w-8 h-8 text-emerald-500" />
+                                    <Card className="!p-5 !rounded-[20px] border-dashed border-white/5 bg-transparent flex flex-col justify-center gap-3 group cursor-default min-h-[138px]">
+                                        <div className="p-2 bg-emerald-500/10 w-fit rounded-[11px] group-hover:scale-105 transition-transform duration-300">
+                                            <TrendingUp className="w-5 h-5 text-emerald-500" />
                                         </div>
                                         <div>
                                             <h3 className="text-xs font-bold text-white/30 uppercase tracking-widest mb-2">Ahorro Potencial</h3>
-                                            <div className="text-4xl font-bold tracking-tighter text-white">
+                                            <div className="text-2xl font-bold tracking-tighter text-white">
                                                 $ 142.060 <span className="text-sm font-medium text-white/20 ml-2">ARS</span>
                                             </div>
                                             <p className="text-xs text-white/40 mt-2">Basado en tus hábitos de consumo.</p>
                                         </div>
                                     </Card>
+
+                                    <AIRecommendations />
                                 </div>
                             </div>
 
                             {/* Sidebar/Actions Section */}
-                            <div className="space-y-8">
-                                <Card className="p-6 bg-gradient-to-b from-white/[0.03] to-transparent">
-                                    <h4 className="text-xs font-bold text-white/30 uppercase tracking-wider mb-6">Comandos Rápidos</h4>
-                                    <div className="grid grid-cols-2 gap-4">
+                            <div className="min-w-0 space-y-5">
+                                <Card className="!p-5 !rounded-[20px] bg-gradient-to-b from-white/[0.03] to-transparent">
+                                    <h4 className="text-[10px] font-bold text-white/35 uppercase tracking-[0.2em] mb-4">Comandos Rápidos</h4>
+                                    <div className="grid grid-cols-3 gap-3">
                                         <ActionButton onClick={() => setIsExpenseModalOpen(true)} icon={<Plus className="w-5 h-5" />} label="Gasto" color="rose" />
                                         <ActionButton onClick={() => setIsIncomeModalOpen(true)} icon={<Wallet className="w-5 h-5" />} label="Ingreso" color="emerald" />
                                         <ActionButton onClick={() => setIsLoanModalOpen(true)} icon={<Sparkles className="w-5 h-5" />} label="Préstamo" color="violet" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 mt-3">
                                         <ActionButton onClick={() => setIsAIModalOpen(true)} icon={<ImageIcon className="w-5 h-5" />} label="Scan Ticket IA" color="blue" full />
                                         <ActionButton onClick={() => setIsReportModalOpen(true)} icon={<FileText className="w-5 h-5" />} label="Generar Reporte" color="indigo" full />
                                     </div>
                                 </Card>
 
-                                <Card className="p-6 border-dashed border-violet-500/10 bg-gradient-to-br from-violet-500/5 to-transparent">
-                                    <div className="flex items-start justify-between mb-6 gap-4">
+                                <Card className="!p-5 !rounded-[20px] border-dashed border-violet-500/10 bg-gradient-to-br from-violet-500/5 to-transparent">
+                                    <div className="flex items-start justify-between mb-4 gap-4">
                                         <div>
                                             <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-2">Préstamos</p>
-                                            <h3 className="text-2xl font-bold text-white">Control de Deudas</h3>
+                                            <h3 className="text-lg font-bold text-white">Control de Deudas</h3>
                                         </div>
-                                        <div className="p-3 rounded-2xl bg-violet-500/10 text-violet-300">
-                                            <Sparkles className="w-6 h-6" />
+                                        <div className="p-2 rounded-xl bg-violet-500/10 text-violet-300">
+                                            <Sparkles className="w-5 h-5" />
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-1 gap-4">
-                                        <div className="p-5 rounded-3xl bg-white/5 border border-violet-500/10">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="p-3 rounded-[14px] bg-white/5 border border-violet-500/10">
                                             <p className="text-[10px] uppercase tracking-[0.2em] text-violet-300/70 mb-2">Total a cobrar</p>
-                                            <p className="text-3xl font-bold text-violet-100">$ {transactions.filter(t => t.loanType === 'LENT' && t.loanStatus === 'PENDING').reduce((acc, t) => {
+                                            <p className="text-lg font-bold text-violet-100">$ {transactions.filter(t => t.loanType === 'LENT' && t.loanStatus === 'PENDING').reduce((acc, t) => {
                                                 const rate = usdRate > 0 ? usdRate : 1
                                                 return acc + (t.currency === 'USD' ? t.amount * rate : t.amount)
                                             }, 0).toLocaleString()}</p>
                                         </div>
-                                        <div className="p-5 rounded-3xl bg-white/5 border border-violet-500/10">
+                                        <div className="p-3 rounded-[14px] bg-white/5 border border-violet-500/10">
                                             <p className="text-[10px] uppercase tracking-[0.2em] text-violet-300/70 mb-2">Total a pagar</p>
-                                            <p className="text-3xl font-bold text-violet-100">$ {transactions.filter(t => t.loanType === 'BORROWED' && t.loanStatus === 'PENDING').reduce((acc, t) => {
+                                            <p className="text-lg font-bold text-violet-100">$ {transactions.filter(t => t.loanType === 'BORROWED' && t.loanStatus === 'PENDING').reduce((acc, t) => {
                                                 const rate = usdRate > 0 ? usdRate : 1
                                                 return acc + (t.currency === 'USD' ? t.amount * rate : t.amount)
                                             }, 0).toLocaleString()}</p>
                                         </div>
                                     </div>
                                 </Card>
-                                <Card className="p-0 overflow-hidden flex flex-col h-[400px]">
-                                    <div className="p-6 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
+                                <Card className="!p-0 !rounded-[20px] overflow-hidden flex flex-col">
+                                    <div className="px-5 py-4 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
                                         <h4 className="text-xs font-bold text-white/30 uppercase tracking-wider">Últimos Movimientos</h4>
                                         <button onClick={() => setCurrentView('TRANSACTIONS')} className="text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-wider">Ver Todos</button>
                                     </div>
-                                    <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                                    <div className="max-h-[420px] overflow-y-auto p-2 space-y-1 custom-scrollbar">
                                         {transactions.slice(0, 10).map((t: any) => (
-                                            <div key={t.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-white/5 transition-colors group border border-transparent hover:border-white/5">
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`p-2 rounded-full ${t.loanType ? 'bg-violet-500/10 text-violet-300' : t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                                            <div key={t.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3 rounded-[14px] hover:bg-white/5 transition-colors group border border-transparent hover:border-white/5">
+                                                <div className="flex min-w-0 items-center gap-3">
+                                                    <div className={`p-2 rounded-[10px] shrink-0 ${t.loanType ? 'bg-violet-500/10 text-violet-300' : t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
                                                         {t.loanType ? <Sparkles className="w-4 h-4" /> : t.type === 'INCOME' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                                                     </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-bold text-white/90 group-hover:text-white">
+                                                    <div className="flex min-w-0 flex-col">
+                                                        <span className="text-sm font-bold text-white/90 group-hover:text-white truncate">
                                                             {t.description || 'Sin descripción'}
                                                         </span>
-                                                        <span className="text-[10px] text-white/40">
+                                                        <span className="text-[10px] text-white/40 truncate">
                                                             {t.loanType ? `${t.loanParty || 'Préstamo'} · ${t.loanStatus || 'Pendiente'}` : (t.category && t.category.toLowerCase()) || 'Varios'} · {new Date(t.date).toLocaleDateString()}
                                                         </span>
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center gap-4">
-                                                    <span className={`text-sm font-bold ${t.loanType ? 'text-violet-300' : t.type === 'INCOME' ? 'text-emerald-400' : 'text-white/60'}`}>
-                                                        {t.currency === 'USD' ? 'U$D' : '$'} {t.amount.toLocaleString()}
-                                                    </span>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="text-right">
+                                                        <span className={`whitespace-nowrap text-xs font-bold ${t.loanType ? 'text-violet-300' : t.type === 'INCOME' ? 'text-emerald-400' : 'text-white/70'}`}>
+                                                            {t.currency === 'USD' ? 'U$D' : '$'} {t.amount.toLocaleString()}
+                                                        </span>
+                                                        {(t.type === 'EXPENSE' || t.loanType) && (
+                                                            <button onClick={() => handleTogglePaid(t.id, t.isPaid, t.loanStatus)} className={`mt-1 ml-auto flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${t.isPaid || t.loanStatus === 'PAID' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-amber-500/10 border-amber-500/30 text-amber-400'}`} title={t.isPaid || t.loanStatus === 'PAID' ? 'Desmarcar pagado' : 'Marcar como pagado'}>
+                                                                {t.isPaid || t.loanStatus === 'PAID' ? <CheckCircle2 className="w-3 h-3" /> : null}
+                                                                {t.isPaid || t.loanStatus === 'PAID' ? 'Pagado' : 'Pendiente'}
+                                                            </button>
+                                                        )}
+                                                    </div>
 
-                                                    <div className="flex items-center gap-2">
-                                                        <button onClick={() => handleTogglePaid(t.id, t.isPaid, t.loanStatus)} className={`p-2 rounded-lg border ${t.isPaid || t.loanStatus === 'PAID' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-white/40'}`} title={t.isPaid || t.loanStatus === 'PAID' ? 'Desmarcar pagado' : 'Marcar como pagado'}>
-                                                            {t.isPaid || t.loanStatus === 'PAID' ? <CheckCircle2 className="w-4 h-4" /> : <Wallet className="w-4 h-4" />}
+                                                    <div className="flex items-center gap-1">
+                                                        <button onClick={() => handleToggleSavings(t.id, t.isSavings)} className={`p-1.5 rounded-lg border ${t.isSavings ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-white/30'}`} title={t.isSavings ? 'Quitar ahorro' : 'Marcar como ahorro'}>
+                                                            <PiggyBank className="w-3.5 h-3.5" />
                                                         </button>
-                                                        <button onClick={() => handleToggleSavings(t.id, t.isSavings)} className={`p-2 rounded-lg border ${t.isSavings ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-white/40'}`} title={t.isSavings ? 'Quitar ahorro' : 'Marcar como ahorro'}>
-                                                            <PiggyBank className="w-4 h-4" />
+                                                        <button onClick={() => openEdit(t)} className="p-1.5 rounded-lg border bg-white/5 border-white/10 text-white/30 hover:text-white" title="Editar">
+                                                            <Edit3 className="w-3.5 h-3.5" />
                                                         </button>
-                                                        <button onClick={() => openEdit(t)} className="p-2 rounded-lg border bg-white/5 border-white/10 text-white/40" title="Editar">
-                                                            <Edit3 className="w-4 h-4" />
-                                                        </button>
-                                                        <button onClick={() => handleDelete(t.id)} className="p-2 rounded-lg border bg-white/5 border-white/10 text-white/40" title="Eliminar">
-                                                            <Trash2 className="w-4 h-4" />
+                                                        <button onClick={() => handleDelete(t.id)} className="p-1.5 rounded-lg border bg-white/5 border-white/10 text-white/30 hover:text-rose-400" title="Eliminar">
+                                                            <Trash2 className="w-3.5 h-3.5" />
                                                         </button>
                                                     </div>
                                                 </div>
@@ -444,17 +449,17 @@ export default function DashboardPage() {
                 transition={{ duration: 0.3, type: "spring", stiffness: 200, damping: 25 }}
                 className={`dashboard-main flex-1 min-h-screen w-full transition-all duration-300 ${isMobileMenuOpen ? 'overflow-hidden' : ''}`}
             >
-                <div className="w-full max-w-[1600px] mx-auto px-8 py-6 md:px-12 md:py-12 lg:px-16 lg:py-16 space-y-12">
+                <div className="w-full max-w-[1680px] mx-auto px-4 py-5 sm:px-6 lg:px-8 lg:py-7 space-y-5">
 
                     {/* Header */}
-                    <div className="pb-8 border-b border-white/5 space-y-3">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
-                            <div className="flex items-center gap-6">
-                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 p-[1px] shadow-2xl overflow-hidden ring-1 ring-white/10">
+                    <div className="pb-5 border-b border-white/5 space-y-3">
+                        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-5">
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-[16px] bg-gradient-to-br from-white/10 to-white/5 border border-white/10 p-[1px] shadow-2xl overflow-hidden ring-1 ring-white/10">
                                     <img src={session?.user?.image || "https://ui-avatars.com/api/?name=User"} alt="Profile" className="w-full h-full object-cover" />
                                 </div>
                                 <div className="space-y-1">
-                                    <h1 className="text-3xl font-extrabold tracking-tight">
+                                    <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
                                         Hola, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">{session?.user?.name ? session.user.name.split(' ')[0] : 'Usuario'}</span>
                                     </h1>
                                     <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
@@ -463,7 +468,7 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-stretch gap-8 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+                            <div className="flex items-stretch gap-3 w-full xl:w-auto overflow-x-auto pb-2 xl:pb-0 scrollbar-hide">
                                 {(() => {
                                     const rate = usdRate > 0 ? usdRate : 1
 
@@ -490,7 +495,6 @@ export default function DashboardPage() {
                                         />
                                     )
                                 })()}
-                                <div className="w-[1px] bg-white/10 hidden md:block" />
                                 <SummaryCard label="Gastos USD" amount={transactions.reduce((acc, t) => t.type === 'EXPENSE' && t.currency === 'USD' ? acc + t.amount : acc, 0).toLocaleString()} currency="USD" />
                             </div>
                         </div>
@@ -736,16 +740,16 @@ function SidebarItem({ icon, label, isOpen, active = false, onClick }: any) {
 
 function SummaryCard({ label, amount, currency, trend = "up" }: { label: string, amount: string, currency: string, trend?: "up" | "down" | "neutral" }) {
     return (
-        <div className="flex flex-col min-w-[160px] p-6 rounded-[2rem] bg-white/[0.02] border border-white/[0.05] shadow-2xl relative group overflow-hidden">
+        <div className="flex flex-col min-w-[190px] px-4 py-3 rounded-[16px] bg-white/[0.02] border border-white/[0.08] shadow-2xl relative group overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] mb-3 relative z-10">{label}</span>
+            <span className="text-[9px] font-bold text-white/25 uppercase tracking-[0.2em] mb-1 relative z-10">{label}</span>
             <div className="flex items-baseline gap-2 relative z-10">
-                <span className="text-xl font-light text-white/30">{currency === 'USD' ? 'U$D' : '$'}</span>
-                <span className="text-4xl font-bold tracking-tighter tabular-nums text-white group-hover:text-glow transition-all duration-500">
+                <span className="text-sm font-light text-white/30">{currency === 'USD' ? 'U$D' : '$'}</span>
+                <span className="text-2xl font-bold tracking-tighter tabular-nums text-white group-hover:text-glow transition-all duration-500">
                     {amount}
                 </span>
             </div>
-            <div className={`mt-3 flex items-center gap-1.5 text-[10px] font-bold ${trend === 'up' ? 'text-emerald-500' : 'text-rose-500'} relative z-10`}>
+            <div className={`mt-1 flex items-center gap-1.5 text-[9px] font-bold ${trend === 'up' ? 'text-emerald-500' : 'text-rose-500'} relative z-10`}>
                 <div className={`w-1.5 h-1.5 rounded-full ${trend === 'up' ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`} />
                 {trend === 'up' ? '+2.4%' : '-0.8%'}
                 <span className="text-white/10 uppercase tracking-widest ml-1">vs mes anterior</span>
@@ -767,17 +771,17 @@ function ActionButton({ onClick, icon, label, color, full = false }: any) {
         <button
             onClick={onClick}
             className={`
-                flex flex-col items-center justify-center gap-4 p-6 rounded-3xl border border-white/[0.06] bg-zinc-900/40 transition-all duration-500
-                hover:scale-[1.03] active:scale-[0.97] group relative overflow-hidden
+                flex flex-col items-center justify-center gap-2 px-2 py-4 rounded-[15px] border border-white/[0.08] bg-zinc-900/40 transition-all duration-300
+                hover:bg-white/[0.04] active:scale-[0.98] group relative overflow-hidden
                 ${colors[color]}
-                ${full ? 'col-span-2 flex-row py-5' : 'aspect-square'}
+                ${full ? 'flex-row !py-2.5' : ''}
             `}
         >
             <div className="absolute inset-0 bg-gradient-to-t from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className={`p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 group-hover:border-current transition-all duration-500 group-hover:scale-110 shadow-xl`}>
-                {React.cloneElement(icon, { size: 24 })}
+            <div className={`${full ? '!p-0 !border-0 !bg-transparent' : 'p-2'} rounded-[11px] bg-white/[0.03] border border-white/5 group-hover:border-current transition-all duration-300 shadow-xl`}>
+                {React.cloneElement(icon, { size: full ? 16 : 20 })}
             </div>
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/40 group-hover:text-white transition-colors">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-white/50 group-hover:text-white transition-colors">
                 {label}
             </span>
         </button>
