@@ -1,0 +1,6 @@
+ALTER TABLE "Transaction"
+    ADD COLUMN IF NOT EXISTS "loanType" TEXT,
+    ADD COLUMN IF NOT EXISTS "loanStatus" TEXT,
+    ADD COLUMN IF NOT EXISTS "loanParty" TEXT,
+    ADD COLUMN IF NOT EXISTS "loanInstallments" INTEGER,
+    ADD COLUMN IF NOT EXISTS "loanNotes" TEXT;
