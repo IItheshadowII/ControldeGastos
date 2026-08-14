@@ -4,6 +4,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -91,6 +92,16 @@ const isCurrentMonth = (date: string) => {
   const value = new Date(date)
   const now = new Date()
   return value.getMonth() === now.getMonth() && value.getFullYear() === now.getFullYear()
+}
+
+const isNewerVersion = (latest: string, current: string) => {
+  const normalize = (value: string) => value.replace(/^v/i, '').split('.').map((part) => Number(part) || 0)
+  const next = normalize(latest)
+  const installed = normalize(current)
+  for (let index = 0; index < Math.max(next.length, installed.length); index += 1) {
+    if ((next[index] || 0) !== (installed[index] || 0)) return (next[index] || 0) > (installed[index] || 0)
+  }
+  return false
 }
 
 export default function App() {
@@ -188,6 +199,33 @@ function FinanceApp() {
 
     setCheckingUpdate(true)
     try {
+      try {
+        const releaseResponse = await fetch('https://api.github.com/repos/IItheshadowII/ControldeGastos/releases/latest', {
+          headers: { Accept: 'application/vnd.github+json' },
+        })
+        if (releaseResponse.ok) {
+          const release = await releaseResponse.json()
+          const latestVersion = String(release?.tag_name || '').replace(/^v/i, '')
+          const installedVersion = Updates.runtimeVersion || '0.0.0'
+          const apk = Array.isArray(release?.assets)
+            ? release.assets.find((asset: { name?: string }) => asset?.name?.toLowerCase().endsWith('.apk'))
+            : null
+          if (apk?.browser_download_url && isNewerVersion(latestVersion, installedVersion)) {
+            Alert.alert(
+              `Nueva versión ${latestVersion}`,
+              `Tenés instalada la ${installedVersion}. Esta actualización incorpora cambios de Android y requiere instalar un APK nuevo.`,
+              [
+                { text: 'Más tarde', style: 'cancel' },
+                { text: 'Descargar APK', onPress: () => Linking.openURL(apk.browser_download_url) },
+              ],
+            )
+            return
+          }
+        }
+      } catch {
+        // Si GitHub no responde, todavía podemos comprobar las actualizaciones OTA.
+      }
+
       const update = await Updates.checkForUpdateAsync()
       if (!update.isAvailable) {
         Alert.alert('Finance AI está actualizada', 'Ya tenés la versión más reciente.')
