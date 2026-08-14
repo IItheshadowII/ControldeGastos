@@ -33,6 +33,7 @@ export type TransactionDraft = {
   type: TransactionType
   frequency: 'VARIABLE' | 'FIXED'
   isPaid: boolean
+  isSavings: boolean
   incomeType: 'BLANCO' | 'NEGRO'
   loanType: 'LENT' | 'BORROWED'
   loanStatus: 'PENDING' | 'PAID'

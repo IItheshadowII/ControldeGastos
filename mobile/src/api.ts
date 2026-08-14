@@ -76,6 +76,7 @@ export async function saveTransaction(draft: TransactionDraft, id?: string) {
     type: draft.type,
     frequency: draft.frequency,
     isPaid: draft.type === 'LOAN' ? draft.loanStatus === 'PAID' : draft.type === 'INCOME' ? true : draft.isPaid,
+    isSavings: draft.isSavings,
     incomeType: draft.type === 'INCOME' ? draft.incomeType : null,
     loanType: draft.type === 'LOAN' ? draft.loanType : undefined,
     loanStatus: draft.type === 'LOAN' ? draft.loanStatus : undefined,

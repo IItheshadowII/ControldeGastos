@@ -61,6 +61,7 @@ const emptyDraft = (type: TransactionType = 'EXPENSE'): TransactionDraft => ({
   type,
   frequency: 'VARIABLE',
   isPaid: type === 'INCOME',
+  isSavings: false,
   incomeType: 'BLANCO',
   loanType: 'LENT',
   loanStatus: 'PENDING',
@@ -75,6 +76,7 @@ const fromTransaction = (item: Transaction): TransactionDraft => ({
   type: item.type,
   frequency: item.frequency || 'VARIABLE',
   isPaid: item.isPaid,
+  isSavings: !!item.isSavings,
   incomeType: item.incomeType || 'BLANCO',
   loanType: item.loanType || 'LENT',
   loanStatus: item.loanStatus || (item.isPaid ? 'PAID' : 'PENDING'),
@@ -576,11 +578,11 @@ function TransactionsScreen({ transactions, filter, setFilter, search, setSearch
               <TransactionIcon item={item} />
               <View style={styles.transactionInfo}>
                 <Text style={styles.transactionName} numberOfLines={1}>{item.description}</Text>
-                <Text style={styles.transactionMeta}>{new Date(item.date).toLocaleDateString('es-AR')} · {item.frequency === 'FIXED' ? 'Fijo' : 'Variable'}</Text>
+                <Text style={styles.transactionMeta}>{new Date(item.date).toLocaleDateString('es-AR')} · {item.isSavings ? 'Ahorro' : item.frequency === 'FIXED' ? 'Fijo' : 'Variable'}</Text>
               </View>
               <View style={styles.transactionAmountWrap}>
-                <Text style={[styles.transactionAmount, { color: item.type === 'INCOME' ? colors.green : colors.text }]}>
-                  {item.type === 'INCOME' ? '+' : '-'}{money(item.amount, item.currency)}
+                <Text style={[styles.transactionAmount, { color: item.isSavings ? colors.blue : item.type === 'INCOME' ? colors.green : colors.text }]}>
+                  {item.isSavings ? '' : item.type === 'INCOME' ? '+' : '-'}{money(item.amount, item.currency)}
                 </Text>
               </View>
             </Pressable>
@@ -812,6 +814,22 @@ function TransactionEditor({ visible, editing, draft, setDraft, onClose, onSaved
                   <Choice label="En blanco" selected={draft.incomeType === 'BLANCO'} onPress={() => update('incomeType', 'BLANCO')} />
                   <Choice label="En negro" selected={draft.incomeType === 'NEGRO'} onPress={() => update('incomeType', 'NEGRO')} />
                 </View>
+                <FieldLabel text="¿ES AHORRO?" />
+                <Pressable
+                  style={[styles.savingsToggle, draft.isSavings && styles.savingsToggleActive]}
+                  onPress={() => update('isSavings', !draft.isSavings)}
+                >
+                  <View style={[styles.savingsCheck, draft.isSavings && styles.savingsCheckActive]}>
+                    {draft.isSavings && <Ionicons name="checkmark" size={16} color="#fff" />}
+                  </View>
+                  <View style={styles.savingsToggleCopy}>
+                    <Text style={[styles.savingsToggleTitle, draft.isSavings && styles.savingsToggleTitleActive]}>
+                      {draft.isSavings ? 'Sí, contar como ahorro' : 'No es ahorro'}
+                    </Text>
+                    <Text style={styles.savingsToggleHint}>Se mostrará separado de tus gastos habituales.</Text>
+                  </View>
+                  <Ionicons name="wallet-outline" size={21} color={draft.isSavings ? colors.blue : colors.muted} />
+                </Pressable>
               </>
             ) : draft.type === 'LOAN' ? (
               <>
@@ -873,8 +891,8 @@ function QuickAction({ label, icon, color, onPress }: { label: string; icon: key
 }
 
 function TransactionIcon({ item }: { item: Transaction }) {
-  const color = item.type === 'INCOME' ? colors.green : item.type === 'LOAN' ? colors.violet : colors.red
-  const icon = item.type === 'INCOME' ? 'arrow-up' : item.type === 'LOAN' ? 'swap-horizontal' : 'arrow-down'
+  const color = item.isSavings ? colors.blue : item.type === 'INCOME' ? colors.green : item.type === 'LOAN' ? colors.violet : colors.red
+  const icon = item.isSavings ? 'wallet-outline' : item.type === 'INCOME' ? 'arrow-up' : item.type === 'LOAN' ? 'swap-horizontal' : 'arrow-down'
   return <View style={[styles.transactionIcon, { backgroundColor: `${color}13` }]}><Ionicons name={icon} size={17} color={color} /></View>
 }
 
@@ -886,11 +904,13 @@ function TransactionRow({ item, onPress, last }: { item: Transaction; onPress: (
         <Text style={styles.transactionName} numberOfLines={1}>{item.description}</Text>
         <View style={styles.metaRow}>
           <Text style={styles.transactionMeta}>{new Date(item.date).toLocaleDateString('es-AR')}</Text>
-          {item.type !== 'INCOME' && <Text style={[styles.miniStatus, { color: item.isPaid ? colors.green : colors.amber }]}>{item.isPaid ? 'PAGADO' : 'PENDIENTE'}</Text>}
+          {item.isSavings
+            ? <Text style={[styles.miniStatus, { color: colors.blue }]}>AHORRO</Text>
+            : item.type !== 'INCOME' && <Text style={[styles.miniStatus, { color: item.isPaid ? colors.green : colors.amber }]}>{item.isPaid ? 'PAGADO' : 'PENDIENTE'}</Text>}
         </View>
       </View>
-      <Text style={[styles.transactionAmount, { color: item.type === 'INCOME' ? colors.green : colors.text }]}>
-        {item.type === 'INCOME' ? '+' : '-'}{money(item.amount, item.currency)}
+      <Text style={[styles.transactionAmount, { color: item.isSavings ? colors.blue : item.type === 'INCOME' ? colors.green : colors.text }]}>
+        {item.isSavings ? '' : item.type === 'INCOME' ? '+' : '-'}{money(item.amount, item.currency)}
       </Text>
       <Ionicons name="chevron-forward" size={16} color="#3d444d" />
     </Pressable>
@@ -1082,6 +1102,14 @@ const styles = StyleSheet.create({
   choiceSelected: { backgroundColor: '#00d89a0c', borderColor: '#00d89a55' },
   choiceText: { color: colors.muted, fontSize: 12, fontWeight: '700' },
   choiceTextSelected: { color: colors.text },
+  savingsToggle: { minHeight: 76, paddingHorizontal: 15, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 17, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+  savingsToggleActive: { borderColor: '#4a9dff55', backgroundColor: '#4a9dff10' },
+  savingsCheck: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, borderColor: '#424a54', alignItems: 'center', justifyContent: 'center' },
+  savingsCheckActive: { borderColor: colors.blue, backgroundColor: colors.blue },
+  savingsToggleCopy: { flex: 1 },
+  savingsToggleTitle: { color: colors.muted, fontSize: 13, fontWeight: '800' },
+  savingsToggleTitleActive: { color: colors.blue },
+  savingsToggleHint: { color: '#626b75', fontSize: 9, lineHeight: 13, marginTop: 4 },
   radio: { width: 17, height: 17, borderRadius: 9, borderWidth: 1.5, borderColor: '#505761', alignItems: 'center', justifyContent: 'center' },
   radioSelected: { borderColor: colors.green },
   radioDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.green },
