@@ -13,7 +13,7 @@ import {
     FileText, TrendingUp, LayoutDashboard, Database, PieChart,
     Activity, ChevronLeft, ChevronRight, Menu, X, ArrowUpRight,
     ArrowDownRight, Search, Calendar, Filter, AlertCircle, Trash2, Edit3,
-    Users, Sparkles, Target, Eye, EyeOff,
+    Users, Sparkles, Target, Eye, EyeOff, Lightbulb, Calculator, CalendarDays,
 } from 'lucide-react'
 import { CheckCircle2 } from 'lucide-react'
 import { PiggyBank } from 'lucide-react'
@@ -765,6 +765,8 @@ function SavingsGoalsView({ transactions, usdRate }: {
                 <SavingsSummaryCard label="Progreso general" value={`${overallProgress.toFixed(0)}%`} detail={totalTarget > 0 ? `$ ${Math.max(0, Math.round(totalTarget - totalSaved)).toLocaleString('es-AR')} por completar` : 'Creá una meta para comenzar'} icon={<TrendingUp className="w-5 h-5" />} />
             </div>
 
+            <SavingsAdviceSection transactions={transactions} usdRate={rate} goals={visibleGoals} totalSaved={totalSaved} />
+
             {goals.length === 0 ? (
                 <Card className="!p-10 !rounded-[24px] border-dashed border-blue-500/20 bg-gradient-to-br from-blue-500/[0.06] to-transparent text-center">
                     <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-5">
@@ -839,6 +841,150 @@ function SavingsSummaryCard({ label, value, detail, icon }: { label: string, val
             <p className="text-2xl font-bold tracking-tight">{value}</p>
             <p className="text-xs text-white/35 mt-2">{detail}</p>
         </Card>
+    )
+}
+
+function SavingsAdviceSection({ transactions, usdRate, goals, totalSaved }: {
+    transactions: any[]
+    usdRate: number
+    goals: SavingsGoal[]
+    totalSaved: number
+}) {
+    const [monthlyContribution, setMonthlyContribution] = useState(50000)
+    const [projectionMonths, setProjectionMonths] = useState(6)
+
+    useEffect(() => {
+        const savedContribution = Number(localStorage.getItem('savingsMonthlyContribution'))
+        const savedMonths = Number(localStorage.getItem('savingsProjectionMonths'))
+        if (savedContribution > 0) setMonthlyContribution(savedContribution)
+        if ([3, 6, 12, 24].includes(savedMonths)) setProjectionMonths(savedMonths)
+    }, [])
+
+    const updateContribution = (value: number) => {
+        const safeValue = Math.max(0, value || 0)
+        setMonthlyContribution(safeValue)
+        localStorage.setItem('savingsMonthlyContribution', String(safeValue))
+    }
+
+    const updateMonths = (months: number) => {
+        setProjectionMonths(months)
+        localStorage.setItem('savingsProjectionMonths', String(months))
+    }
+
+    const now = new Date()
+    const currentExpenses = transactions.filter(transaction => {
+        const date = new Date(transaction.date)
+        return transaction.type === 'EXPENSE'
+            && !transaction.isSavings
+            && date.getMonth() === now.getMonth()
+            && date.getFullYear() === now.getFullYear()
+    })
+    const expensesByCategory = currentExpenses.reduce((totals: Record<string, number>, transaction) => {
+        const category = transaction.category || 'Varios'
+        const amount = transaction.currency === 'USD' ? transaction.amount * usdRate : transaction.amount
+        totals[category] = (totals[category] || 0) + amount
+        return totals
+    }, {})
+    const mainExpense = Object.entries(expensesByCategory).sort(([, a], [, b]) => b - a)[0]
+    const primaryGoal = goals[0]
+    const remainingForGoal = primaryGoal ? Math.max(0, primaryGoal.amount - totalSaved) : 0
+    const requiredMonthly = primaryGoal ? Math.ceil(remainingForGoal / projectionMonths) : 0
+    const projection = monthlyContribution * projectionMonths
+    const projectionRows = [1, 3, 6, 12].map(months => ({ months, total: monthlyContribution * months }))
+
+    const tips = [
+        {
+            title: 'Empezá con lo que puedas',
+            detail: monthlyContribution > 0
+                ? `Separando $ ${monthlyContribution.toLocaleString('es-AR')} por mes, en ${projectionMonths} meses tendrías $ ${projection.toLocaleString('es-AR')}.`
+                : 'Elegí un aporte mensual realista, aunque sea pequeño, y sostenelo en el tiempo.',
+        },
+        {
+            title: 'Automatizá tu ahorro',
+            detail: 'Apartá el dinero apenas cobrás para evitar que se mezcle con los gastos diarios.',
+        },
+        {
+            title: 'Registrá en qué se va el dinero',
+            detail: mainExpense
+                ? `Este mes tu categoría más alta es ${mainExpense[0]} con $ ${Math.round(mainExpense[1]).toLocaleString('es-AR')}. Revisala primero.`
+                : 'Cargá tus gastos para detectar qué categoría se lleva la mayor parte de tu ingreso.',
+        },
+        {
+            title: primaryGoal ? `Plan para “${primaryGoal.name}”` : 'Definí un objetivo concreto',
+            detail: primaryGoal
+                ? remainingForGoal === 0
+                    ? 'Ya alcanzaste esta meta. Podés crear un nuevo objetivo para seguir avanzando.'
+                    : `Para completarla en ${projectionMonths} meses necesitás guardar cerca de $ ${requiredMonthly.toLocaleString('es-AR')} por mes.`
+                : 'Ponerle nombre y monto a una meta hace más fácil mantener la constancia.',
+        },
+    ]
+
+    return (
+        <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-5">
+            <Card className="!p-6 !rounded-[22px] !overflow-hidden bg-gradient-to-br from-emerald-500/[0.08] via-transparent to-transparent border-emerald-500/15">
+                <div className="flex items-start justify-between gap-4 mb-6">
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400 mb-2">Proyección de ahorro</p>
+                        <h3 className="text-xl font-bold">Si todos los meses ahorraras...</h3>
+                        <p className="text-sm text-white/40 mt-2">Probá distintos aportes y descubrí cuánto podrías acumular.</p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 shrink-0"><Calculator className="w-5 h-5" /></div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 mb-5">
+                    <label className="space-y-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">Aporte por mes (ARS)</span>
+                        <input type="number" min="0" value={monthlyContribution || ''} onChange={event => updateContribution(Number(event.target.value))} className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white text-lg font-bold outline-none focus:border-emerald-500/50" placeholder="50.000" />
+                    </label>
+                    <div className="space-y-2">
+                        <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">Plazo</span>
+                        <div className="flex h-12 rounded-xl bg-white/5 border border-white/10 p-1">
+                            {[3, 6, 12, 24].map(months => (
+                                <button key={months} onClick={() => updateMonths(months)} className={`px-3 rounded-lg text-xs font-bold transition-colors ${projectionMonths === months ? 'bg-emerald-500 text-black' : 'text-white/45 hover:text-white'}`}>{months}m</button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/15 mb-4 flex items-center justify-between gap-4">
+                    <div>
+                        <p className="text-xs text-emerald-300/70">En {projectionMonths} meses tendrías</p>
+                        <p className="text-2xl font-bold text-emerald-300 mt-1">$ {projection.toLocaleString('es-AR')}</p>
+                    </div>
+                    <CalendarDays className="w-7 h-7 text-emerald-400/60" />
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {projectionRows.map(row => (
+                        <div key={row.months} className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                            <p className="text-[10px] uppercase tracking-wider text-white/30">{row.months} {row.months === 1 ? 'mes' : 'meses'}</p>
+                            <p className="text-sm font-bold mt-1">$ {row.total.toLocaleString('es-AR')}</p>
+                        </div>
+                    ))}
+                </div>
+            </Card>
+
+            <Card className="!p-6 !rounded-[22px] bg-gradient-to-br from-amber-500/[0.07] to-transparent border-amber-500/15">
+                <div className="flex items-start justify-between gap-4 mb-6">
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400 mb-2">Consejos para tu bolsillo</p>
+                        <h3 className="text-xl font-bold">Pequeños hábitos, grandes resultados</h3>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 shrink-0"><Lightbulb className="w-5 h-5" /></div>
+                </div>
+                <div className="space-y-3">
+                    {tips.map((tip, index) => (
+                        <div key={tip.title} className="flex gap-3 p-3.5 rounded-2xl bg-white/[0.035] border border-white/5">
+                            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs font-bold shrink-0">{index + 1}</div>
+                            <div>
+                                <p className="text-sm font-bold">{tip.title}</p>
+                                <p className="text-xs leading-relaxed text-white/40 mt-1">{tip.detail}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </Card>
+        </div>
     )
 }
 
