@@ -18,6 +18,7 @@ docker-compose.override.yml
 *.lognode_modules
 # Ignore local data with secrets
 /.data/
+/secret/
 # Keep environment variables out of version control
 # .env
 
