@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -16,6 +17,7 @@ import {
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import * as Updates from 'expo-updates'
+import { CameraView, useCameraPermissions } from 'expo-camera'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
@@ -27,10 +29,11 @@ import {
   logout,
   restoreSession,
   renewFixedExpenses,
+  scanTicketImage,
   saveTransaction,
   setPaid,
 } from './src/api'
-import { Transaction, TransactionDraft, TransactionType, User } from './src/types'
+import { TicketScanResult, Transaction, TransactionDraft, TransactionType, User } from './src/types'
 
 type Tab = 'home' | 'transactions'
 type Filter = 'ALL' | 'PENDING' | 'PAID'
@@ -52,6 +55,7 @@ const colors = {
 const emptyDraft = (type: TransactionType = 'EXPENSE'): TransactionDraft => ({
   description: '',
   amount: '',
+  category: '',
   currency: 'ARS',
   type,
   frequency: 'VARIABLE',
@@ -65,6 +69,7 @@ const emptyDraft = (type: TransactionType = 'EXPENSE'): TransactionDraft => ({
 const fromTransaction = (item: Transaction): TransactionDraft => ({
   description: item.description,
   amount: String(item.amount),
+  category: item.category || '',
   currency: item.currency,
   type: item.type,
   frequency: item.frequency || 'VARIABLE',
@@ -110,6 +115,7 @@ function FinanceApp() {
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [draft, setDraft] = useState<TransactionDraft>(emptyDraft())
   const [checkingUpdate, setCheckingUpdate] = useState(false)
+  const [scannerOpen, setScannerOpen] = useState(false)
 
   useEffect(() => {
     restoreSession()
@@ -204,6 +210,20 @@ function FinanceApp() {
     }
   }
 
+  const handleTicketScanned = (result: TicketScanResult) => {
+    setScannerOpen(false)
+    setEditing(null)
+    setDraft({
+      ...emptyDraft('EXPENSE'),
+      description: result.description,
+      amount: String(result.amount).replace('.', ','),
+      category: result.category,
+      currency: result.currency,
+      isPaid: false,
+    })
+    setEditorOpen(true)
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <NativeStatusBar backgroundColor={colors.bg} barStyle="light-content" />
@@ -217,6 +237,7 @@ function FinanceApp() {
             onRefresh={() => loadTransactions()}
             onCreate={openCreate}
             onEdit={openEdit}
+            onScanTicket={() => setScannerOpen(true)}
           />
         ) : (
           <TransactionsScreen
@@ -265,6 +286,11 @@ function FinanceApp() {
             Alert.alert('No se pudo eliminar', (error as Error).message)
           }
         }}
+      />
+      <TicketScanner
+        visible={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScanned={handleTicketScanned}
       />
     </SafeAreaView>
   )
@@ -377,13 +403,14 @@ function Header({ user, onLogout, onUpdate, checkingUpdate }: {
   )
 }
 
-function Dashboard({ transactions, usdRate, refreshing, onRefresh, onCreate, onEdit }: {
+function Dashboard({ transactions, usdRate, refreshing, onRefresh, onCreate, onEdit, onScanTicket }: {
   transactions: Transaction[]
   usdRate: number
   refreshing: boolean
   onRefresh: () => void
   onCreate: (type: TransactionType) => void
   onEdit: (item: Transaction) => void
+  onScanTicket: () => void
 }) {
   const month = transactions.filter((item) => isCurrentMonth(item.date))
   const toArs = (item: Transaction) => item.currency === 'USD' ? item.amount * usdRate : item.amount
@@ -431,6 +458,14 @@ function Dashboard({ transactions, usdRate, refreshing, onRefresh, onCreate, onE
         <QuickAction label="Ingreso" icon="add" color={colors.green} onPress={() => onCreate('INCOME')} />
         <QuickAction label="Préstamo" icon="swap-horizontal" color={colors.violet} onPress={() => onCreate('LOAN')} />
       </View>
+      <Pressable style={({ pressed }) => [styles.scanTicketAction, pressed && styles.pressed]} onPress={onScanTicket}>
+        <View style={styles.scanTicketIcon}><Ionicons name="scan-outline" size={22} color={colors.blue} /></View>
+        <View style={styles.scanTicketCopy}>
+          <Text style={styles.scanTicketTitle}>Escanear ticket con IA</Text>
+          <Text style={styles.scanTicketSubtitle}>La cámara completa el gasto por vos</Text>
+        </View>
+        <View style={styles.cameraBadge}><Ionicons name="camera-outline" size={14} color={colors.blue} /><Text style={styles.cameraBadgeText}>CÁMARA</Text></View>
+      </Pressable>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Pendientes</Text>
@@ -524,6 +559,135 @@ function TransactionsScreen({ transactions, filter, setFilter, search, setSearch
   )
 }
 
+function TicketScanner({ visible, onClose, onScanned }: {
+  visible: boolean
+  onClose: () => void
+  onScanned: (result: TicketScanResult) => void
+}) {
+  const cameraRef = useRef<CameraView>(null)
+  const [permission, requestPermission] = useCameraPermissions()
+  const [photoUri, setPhotoUri] = useState<string | null>(null)
+  const [capturing, setCapturing] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [torch, setTorch] = useState(false)
+
+  useEffect(() => {
+    if (!visible) {
+      setPhotoUri(null)
+      setCapturing(false)
+      setAnalyzing(false)
+      setTorch(false)
+    }
+  }, [visible])
+
+  const close = () => {
+    if (analyzing) return
+    setPhotoUri(null)
+    onClose()
+  }
+
+  const capture = async () => {
+    if (!cameraRef.current || capturing) return
+    setCapturing(true)
+    try {
+      const picture = await cameraRef.current.takePictureAsync({ quality: 0.82, skipProcessing: false })
+      setPhotoUri(picture.uri)
+    } catch (error) {
+      Alert.alert('No se pudo tomar la foto', (error as Error).message)
+    } finally {
+      setCapturing(false)
+    }
+  }
+
+  const analyze = async () => {
+    if (!photoUri || analyzing) return
+    setAnalyzing(true)
+    try {
+      onScanned(await scanTicketImage(photoUri))
+    } catch (error) {
+      Alert.alert(
+        'No se pudo leer el ticket',
+        `${(error as Error).message}\n\nPodés repetir la foto procurando buena luz y que se vea el total completo.`,
+      )
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={close}>
+      <SafeAreaView style={styles.scannerSafe} edges={['top', 'bottom']}>
+        <View style={styles.scannerHeader}>
+          <Pressable onPress={close} style={styles.scannerHeaderButton} disabled={analyzing}>
+            <Ionicons name="close" size={24} color={colors.text} />
+          </Pressable>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={styles.eyebrow}>LECTURA INTELIGENTE</Text>
+            <Text style={styles.scannerTitle}>Escanear ticket</Text>
+          </View>
+          <Pressable onPress={() => setTorch((value) => !value)} style={styles.scannerHeaderButton} disabled={!!photoUri}>
+            <Ionicons name={torch ? 'flash' : 'flash-off-outline'} size={21} color={torch ? colors.amber : colors.text} />
+          </Pressable>
+        </View>
+
+        {!permission ? (
+          <View style={styles.scannerMessage}><ActivityIndicator color={colors.blue} /></View>
+        ) : !permission.granted ? (
+          <View style={styles.scannerMessage}>
+            <View style={styles.permissionIcon}><Ionicons name="camera-outline" size={34} color={colors.blue} /></View>
+            <Text style={styles.permissionTitle}>Necesitamos usar la cámara</Text>
+            <Text style={styles.permissionText}>Finance AI solo usa la foto para reconocer los datos del ticket.</Text>
+            <Pressable style={styles.permissionButton} onPress={requestPermission}>
+              <Text style={styles.permissionButtonText}>Permitir cámara</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <>
+            <View style={styles.cameraStage}>
+              {photoUri ? (
+                <Image source={{ uri: photoUri }} style={styles.ticketPreview} resizeMode="contain" />
+              ) : (
+                <CameraView ref={cameraRef} style={styles.cameraView} facing="back" enableTorch={torch}>
+                  <View style={styles.ticketGuide} pointerEvents="none">
+                    <View style={[styles.guideCorner, styles.guideTopLeft]} />
+                    <View style={[styles.guideCorner, styles.guideTopRight]} />
+                    <View style={[styles.guideCorner, styles.guideBottomLeft]} />
+                    <View style={[styles.guideCorner, styles.guideBottomRight]} />
+                  </View>
+                </CameraView>
+              )}
+            </View>
+
+            <View style={styles.scannerInstructions}>
+              <Text style={styles.scannerInstructionTitle}>{photoUri ? 'Revisá que el total sea legible' : 'Alineá el ticket dentro del marco'}</Text>
+              <Text style={styles.scannerInstructionText}>{photoUri ? 'La IA completará concepto, monto, moneda y categoría.' : 'Usá buena luz y evitá reflejos o sombras.'}</Text>
+            </View>
+
+            <View style={styles.scannerControls}>
+              {photoUri ? (
+                <>
+                  <Pressable style={styles.retakeButton} onPress={() => setPhotoUri(null)} disabled={analyzing}>
+                    <Ionicons name="refresh" size={20} color={colors.text} />
+                    <Text style={styles.retakeButtonText}>Repetir</Text>
+                  </Pressable>
+                  <Pressable style={styles.analyzeButton} onPress={analyze} disabled={analyzing}>
+                    {analyzing ? <ActivityIndicator color="#001d14" /> : <Ionicons name="sparkles" size={20} color="#001d14" />}
+                    <Text style={styles.analyzeButtonText}>{analyzing ? 'Analizando…' : 'Analizar con IA'}</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <Pressable style={styles.shutterOuter} onPress={capture} disabled={capturing}>
+                  <View style={styles.shutterInner}>{capturing && <ActivityIndicator color={colors.bg} />}</View>
+                </Pressable>
+              )}
+            </View>
+          </>
+        )}
+      </SafeAreaView>
+    </Modal>
+  )
+}
+
 function TransactionEditor({ visible, editing, draft, setDraft, onClose, onSaved, onDeleted }: {
   visible: boolean
   editing: Transaction | null
@@ -595,6 +759,13 @@ function TransactionEditor({ visible, editing, draft, setDraft, onClose, onSaved
 
             <FieldLabel text="CONCEPTO" />
             <TextInput value={draft.description} onChangeText={(value) => update('description', value)} placeholder="Ej: Supermercado, sueldo, alquiler…" placeholderTextColor="#525862" style={styles.textInput} />
+
+            {draft.type === 'EXPENSE' && (
+              <>
+                <FieldLabel text="CATEGORÍA" />
+                <TextInput value={draft.category} onChangeText={(value) => update('category', value)} placeholder="Ej: Alimentación, servicios, salud…" placeholderTextColor="#525862" style={styles.textInput} />
+              </>
+            )}
 
             {draft.type === 'INCOME' ? (
               <>
@@ -784,6 +955,13 @@ const styles = StyleSheet.create({
   quickAction: { flex: 1, height: 100, backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   quickIcon: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   quickLabel: { color: '#bdc2c8', fontSize: 11, fontWeight: '800', marginTop: 9 },
+  scanTicketAction: { minHeight: 74, marginTop: 10, paddingHorizontal: 15, flexDirection: 'row', alignItems: 'center', backgroundColor: '#0a0f15', borderRadius: 18, borderWidth: 1, borderColor: '#1a2b40' },
+  scanTicketIcon: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#4a9dff15' },
+  scanTicketCopy: { flex: 1, paddingHorizontal: 12 },
+  scanTicketTitle: { color: colors.text, fontSize: 13, fontWeight: '800' },
+  scanTicketSubtitle: { color: colors.muted, fontSize: 9, marginTop: 4 },
+  cameraBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 6, borderRadius: 9, backgroundColor: '#4a9dff12' },
+  cameraBadgeText: { color: colors.blue, fontSize: 7, fontWeight: '900', letterSpacing: 0.7 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTotal: { fontSize: 14, fontWeight: '800', marginTop: 15 },
   sectionHint: { color: colors.blue, fontSize: 8, fontWeight: '900', letterSpacing: 1, marginTop: 15 },
@@ -820,6 +998,35 @@ const styles = StyleSheet.create({
   navLabel: { color: '#69717b', fontSize: 9, fontWeight: '800' },
   navLabelActive: { color: colors.green },
   modalSafe: { flex: 1, backgroundColor: colors.bg },
+  scannerSafe: { flex: 1, backgroundColor: '#030405' },
+  scannerHeader: { height: 72, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  scannerHeaderButton: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111419' },
+  scannerTitle: { color: colors.text, fontSize: 17, fontWeight: '800', marginTop: 3 },
+  scannerMessage: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36 },
+  permissionIcon: { width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: '#4a9dff15', marginBottom: 22 },
+  permissionTitle: { color: colors.text, fontSize: 22, fontWeight: '800', textAlign: 'center' },
+  permissionText: { color: colors.muted, fontSize: 14, lineHeight: 21, textAlign: 'center', marginTop: 10 },
+  permissionButton: { height: 54, minWidth: 210, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.blue, marginTop: 26 },
+  permissionButtonText: { color: '#06111d', fontSize: 14, fontWeight: '900' },
+  cameraStage: { flex: 1, marginHorizontal: 16, borderRadius: 26, overflow: 'hidden', backgroundColor: '#090b0e', borderWidth: 1, borderColor: '#242a31' },
+  cameraView: { flex: 1 },
+  ticketPreview: { width: '100%', height: '100%', backgroundColor: '#090b0e' },
+  ticketGuide: { position: 'absolute', left: '11%', right: '11%', top: '9%', bottom: '9%' },
+  guideCorner: { position: 'absolute', width: 42, height: 42, borderColor: colors.blue },
+  guideTopLeft: { left: 0, top: 0, borderLeftWidth: 3, borderTopWidth: 3, borderTopLeftRadius: 12 },
+  guideTopRight: { right: 0, top: 0, borderRightWidth: 3, borderTopWidth: 3, borderTopRightRadius: 12 },
+  guideBottomLeft: { left: 0, bottom: 0, borderLeftWidth: 3, borderBottomWidth: 3, borderBottomLeftRadius: 12 },
+  guideBottomRight: { right: 0, bottom: 0, borderRightWidth: 3, borderBottomWidth: 3, borderBottomRightRadius: 12 },
+  scannerInstructions: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 18 },
+  scannerInstructionTitle: { color: colors.text, fontSize: 14, fontWeight: '800', textAlign: 'center' },
+  scannerInstructionText: { color: colors.muted, fontSize: 11, lineHeight: 16, textAlign: 'center', marginTop: 5 },
+  scannerControls: { minHeight: 112, paddingHorizontal: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  shutterOuter: { width: 78, height: 78, borderRadius: 39, borderWidth: 3, borderColor: colors.text, alignItems: 'center', justifyContent: 'center' },
+  shutterInner: { width: 62, height: 62, borderRadius: 31, backgroundColor: colors.text, alignItems: 'center', justifyContent: 'center' },
+  retakeButton: { flex: 0.42, height: 56, borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  retakeButtonText: { color: colors.text, fontSize: 13, fontWeight: '800' },
+  analyzeButton: { flex: 0.58, height: 56, borderRadius: 16, backgroundColor: colors.green, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  analyzeButtonText: { color: '#001d14', fontSize: 13, fontWeight: '900' },
   modalHeader: { height: 70, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: colors.border },
   modalTitle: { color: colors.text, fontSize: 17, fontWeight: '800', marginTop: 2 },
   iconButton: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: colors.surface },

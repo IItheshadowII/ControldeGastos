@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store'
-import { Transaction, TransactionDraft, User } from './types'
+import { TicketScanResult, Transaction, TransactionDraft, User } from './types'
 
 export const API_BASE_URL = 'https://gastos.accesoit.com.ar'
 const TOKEN_KEY = 'finance_ai_session'
@@ -70,6 +70,7 @@ export async function saveTransaction(draft: TransactionDraft, id?: string) {
   const normalizedAmount = Number(draft.amount.replace(/\./g, '').replace(',', '.'))
   const body = {
     description: draft.description.trim(),
+    category: draft.category.trim() || null,
     amount: normalizedAmount,
     currency: draft.currency,
     type: draft.type,
@@ -84,6 +85,41 @@ export async function saveTransaction(draft: TransactionDraft, id?: string) {
     method: id ? 'PATCH' : 'POST',
     body: JSON.stringify(body),
   })
+}
+
+export async function scanTicketImage(uri: string, mimeType = 'image/jpeg'): Promise<TicketScanResult> {
+  const token = await SecureStore.getItemAsync(TOKEN_KEY)
+  const formData = new FormData()
+  formData.append('file', {
+    uri,
+    name: `ticket-${Date.now()}.jpg`,
+    type: mimeType,
+  } as unknown as Blob)
+
+  const response = await fetch(`${API_BASE_URL}/api/ai/upload-ticket`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  })
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(payload?.details || payload?.message || payload?.error || 'No se pudo analizar el ticket')
+  }
+
+  const amount = Number(payload?.amount)
+  if (!payload?.description || !Number.isFinite(amount) || amount <= 0) {
+    throw new Error('La IA no pudo reconocer el concepto o el total. Probá con una foto más clara.')
+  }
+
+  return {
+    description: String(payload.description).trim(),
+    amount,
+    currency: String(payload.currency).toUpperCase() === 'USD' ? 'USD' : 'ARS',
+    category: payload.category ? String(payload.category).trim() : 'Otros',
+  }
 }
 
 export const setPaid = (transaction: Transaction, paid: boolean) =>

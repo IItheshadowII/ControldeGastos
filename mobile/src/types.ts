@@ -28,6 +28,7 @@ export type User = {
 export type TransactionDraft = {
   description: string
   amount: string
+  category: string
   currency: 'ARS' | 'USD'
   type: TransactionType
   frequency: 'VARIABLE' | 'FIXED'
@@ -36,4 +37,11 @@ export type TransactionDraft = {
   loanType: 'LENT' | 'BORROWED'
   loanStatus: 'PENDING' | 'PAID'
   loanParty: string
+}
+
+export type TicketScanResult = {
+  description: string
+  amount: number
+  currency: 'ARS' | 'USD'
+  category: string
 }
