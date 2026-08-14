@@ -41,8 +41,8 @@ export const AIRecommendations = () => {
     }, [])
 
     return (
-        <Card className="h-full !p-5 !rounded-[20px] border-blue-500/20 bg-blue-500/5">
-            <div className="flex justify-between items-center mb-4 gap-3">
+        <Card className="h-full !p-6 !rounded-[20px] !overflow-hidden border-blue-500/20 bg-blue-500/5">
+            <div className="flex justify-between items-center mb-5 gap-4">
                 <h3 className="text-lg font-bold flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-blue-400" /> IA Consejero
                 </h3>

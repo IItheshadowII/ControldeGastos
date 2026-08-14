@@ -270,13 +270,13 @@ export default function DashboardPage() {
                                 <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_0.8fr_1.4fr] gap-4">
                                     <div
                                         onClick={() => setCurrentView('TRANSACTIONS')}
-                                        className="p-5 min-h-[138px] bg-gradient-to-br from-amber-500/5 to-transparent border border-amber-500/10 hover:border-amber-500/20 transition-all group cursor-pointer rounded-[20px] backdrop-blur-xl shadow-2xl"
+                                        className="p-6 min-h-[148px] bg-gradient-to-br from-amber-500/5 to-transparent border border-amber-500/10 hover:border-amber-500/20 transition-all group cursor-pointer rounded-[20px] backdrop-blur-xl shadow-2xl overflow-hidden"
                                     >
-                                        <div className="flex items-start justify-between mb-4">
+                                        <div className="flex items-start justify-between gap-4 mb-5">
                                             <div className="p-2 bg-amber-500/10 rounded-[11px] group-hover:scale-105 transition-transform duration-300">
                                                 <AlertCircle className="w-5 h-5 text-amber-500" />
                                             </div>
-                                            <span className="text-[10px] text-amber-500/60 font-bold uppercase tracking-wider">Pendientes</span>
+                                            <span className="pr-1 text-[10px] text-amber-500/60 font-bold uppercase tracking-wider">Pendientes</span>
                                         </div>
                                         <div>
                                             <h3 className="text-xs font-bold text-white/30 uppercase tracking-widest mb-2">Gastos por Pagar</h3>
@@ -299,7 +299,7 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
 
-                                    <Card className="!p-5 !rounded-[20px] border-dashed border-white/5 bg-transparent flex flex-col justify-center gap-3 group cursor-default min-h-[138px]">
+                                    <Card className="!p-6 !rounded-[20px] !overflow-hidden border-dashed border-white/5 bg-transparent flex flex-col justify-center gap-3 group cursor-default min-h-[148px]">
                                         <div className="p-2 bg-emerald-500/10 w-fit rounded-[11px] group-hover:scale-105 transition-transform duration-300">
                                             <TrendingUp className="w-5 h-5 text-emerald-500" />
                                         </div>
@@ -318,8 +318,8 @@ export default function DashboardPage() {
 
                             {/* Sidebar/Actions Section */}
                             <div className="min-w-0 space-y-5">
-                                <Card className="!p-5 !rounded-[20px] bg-gradient-to-b from-white/[0.03] to-transparent">
-                                    <h4 className="text-[10px] font-bold text-white/35 uppercase tracking-[0.2em] mb-4">Comandos Rápidos</h4>
+                                <Card className="!p-6 !rounded-[20px] !overflow-hidden bg-gradient-to-b from-white/[0.03] to-transparent">
+                                    <h4 className="text-[10px] font-bold text-white/35 uppercase tracking-[0.2em] mb-5">Comandos Rápidos</h4>
                                     <div className="grid grid-cols-3 gap-3">
                                         <ActionButton onClick={() => setIsExpenseModalOpen(true)} icon={<Plus className="w-5 h-5" />} label="Gasto" color="rose" />
                                         <ActionButton onClick={() => setIsIncomeModalOpen(true)} icon={<Wallet className="w-5 h-5" />} label="Ingreso" color="emerald" />
@@ -331,13 +331,13 @@ export default function DashboardPage() {
                                     </div>
                                 </Card>
 
-                                <Card className="!p-5 !rounded-[20px] border-dashed border-violet-500/10 bg-gradient-to-br from-violet-500/5 to-transparent">
-                                    <div className="flex items-start justify-between mb-4 gap-4">
+                                <Card className="!p-6 !rounded-[20px] !overflow-hidden border-dashed border-violet-500/10 bg-gradient-to-br from-violet-500/5 to-transparent">
+                                    <div className="flex items-start justify-between mb-5 gap-5">
                                         <div>
                                             <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-2">Préstamos</p>
                                             <h3 className="text-lg font-bold text-white">Control de Deudas</h3>
                                         </div>
-                                        <div className="p-2 rounded-xl bg-violet-500/10 text-violet-300">
+                                        <div className="p-2 rounded-xl bg-violet-500/10 text-violet-300 shrink-0 mr-1">
                                             <Sparkles className="w-5 h-5" />
                                         </div>
                                     </div>
@@ -359,11 +359,11 @@ export default function DashboardPage() {
                                     </div>
                                 </Card>
                                 <Card className="!p-0 !rounded-[20px] overflow-hidden flex flex-col">
-                                    <div className="px-5 py-4 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
+                                    <div className="px-6 py-5 border-b border-white/5 bg-white/[0.02] flex justify-between items-center gap-4">
                                         <h4 className="text-xs font-bold text-white/30 uppercase tracking-wider">Últimos Movimientos</h4>
-                                        <button onClick={() => setCurrentView('TRANSACTIONS')} className="text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-wider">Ver Todos</button>
+                                        <button onClick={() => setCurrentView('TRANSACTIONS')} className="shrink-0 pr-1 text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-wider">Ver Todos</button>
                                     </div>
-                                    <div className="max-h-[420px] overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                                    <div className="max-h-[420px] overflow-y-auto p-3 space-y-1 custom-scrollbar">
                                         {transactions.slice(0, 10).map((t: any) => (
                                             <div
                                                 key={t.id}

@@ -231,13 +231,13 @@ const StatCard = ({ label, value, icon: Icon, color, trend, delay, actions }: St
     }
 
     return (
-        <Card delay={delay} className="!p-5 !rounded-[20px] group">
-            <div className="flex items-start justify-between mb-5">
+        <Card delay={delay} className="!px-6 !py-5 !rounded-[20px] !overflow-hidden group">
+            <div className="flex items-start justify-between gap-4 mb-5">
                 <div className={`p-2.5 rounded-[11px] bg-gradient-to-br ${colors[color]}`}>
                     <Icon className="w-5 h-5" />
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-white/30 font-bold uppercase tracking-wider">
+                    <span className="pr-1 text-[10px] text-white/30 font-bold uppercase tracking-wider text-right leading-tight">
                         {trend}
                     </span>
                     {actions}

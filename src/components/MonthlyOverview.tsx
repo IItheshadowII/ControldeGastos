@@ -62,14 +62,14 @@ export const MonthlyOverview = ({ transactions, usdRate = 1, onEdit }: { transac
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.01] to-transparent pointer-events-none" />
 
             {/* Header */}
-            <div className="p-4 md:px-5 md:py-4 border-b border-white/[0.07] flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 relative z-10 bg-white/[0.01]">
+            <div className="px-5 py-5 md:px-6 border-b border-white/[0.07] flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 relative z-10 bg-white/[0.01]">
                 <div className="space-y-1">
                     <p className="text-[10px] uppercase font-bold tracking-[0.3em] text-white/20">Análisis Mensual</p>
                     <h3 className="text-xl md:text-2xl font-bold tracking-tight">
                         {new Date().toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
                     </h3>
                 </div>
-                <div className="text-left sm:text-right space-y-1">
+                <div className="text-left sm:text-right space-y-1 sm:pr-1">
                     <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/20">Balance Neto</p>
                     <p className={`text-2xl md:text-3xl font-bold tracking-tighter ${balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         $ {balance.toLocaleString()}
@@ -81,7 +81,7 @@ export const MonthlyOverview = ({ transactions, usdRate = 1, onEdit }: { transac
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y md:divide-y-0 md:divide-x lg:divide-x divide-white/5 flex-1 relative z-10">
 
                 {/* Col 1: Ingresos */}
-                <div className="p-4 md:p-5 space-y-5 bg-emerald-500/[0.01]">
+                <div className="p-5 md:p-6 space-y-5 bg-emerald-500/[0.01]">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
                             <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-emerald-500/40">Total Ingresos</p>
@@ -99,7 +99,7 @@ export const MonthlyOverview = ({ transactions, usdRate = 1, onEdit }: { transac
                 </div>
 
                 {/* Col 2: Gastos Fijos */}
-                <div className="p-4 md:p-5 space-y-5 bg-rose-500/[0.01]">
+                <div className="p-5 md:p-6 space-y-5 bg-rose-500/[0.01]">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
                             <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-rose-500/40">Fijos Mensuales</p>
@@ -120,7 +120,7 @@ export const MonthlyOverview = ({ transactions, usdRate = 1, onEdit }: { transac
                 {/* Col 3: Extras */}
                 <div className="flex flex-col bg-zinc-900/[0.01]">
                     {/* USD Section */}
-                    <div className="p-4 md:p-5 border-b border-white/5">
+                    <div className="p-5 md:p-6 border-b border-white/5">
                         <div className="flex items-center justify-between mb-4 md:mb-6">
                             <div className="space-y-1">
                                 <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-blue-500/40">Gastos en Moneda</p>
@@ -138,7 +138,7 @@ export const MonthlyOverview = ({ transactions, usdRate = 1, onEdit }: { transac
                     </div>
 
                     {/* Variables Section */}
-                    <div className="p-4 md:p-5 flex-1">
+                    <div className="p-5 md:p-6 flex-1">
                         <div className="flex items-center justify-between mb-4 md:mb-6">
                             <div className="space-y-1">
                                 <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-zinc-500/40">Gastos Adicionales</p>
