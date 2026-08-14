@@ -89,12 +89,16 @@ export async function saveTransaction(draft: TransactionDraft, id?: string) {
 
 export async function scanTicketImage(uri: string, mimeType = 'image/jpeg'): Promise<TicketScanResult> {
   const token = await SecureStore.getItemAsync(TOKEN_KEY)
+  const localImage = await fetch(uri)
+  const sourceBlob = await localImage.blob()
+  if (!sourceBlob.size) {
+    throw new Error('La foto está vacía o no se pudo leer desde el dispositivo')
+  }
+  const imageBlob = sourceBlob.type === mimeType
+    ? sourceBlob
+    : new Blob([sourceBlob], { type: mimeType })
   const formData = new FormData()
-  formData.append('file', {
-    uri,
-    name: `ticket-${Date.now()}.jpg`,
-    type: mimeType,
-  } as unknown as Blob)
+  formData.append('file', imageBlob, `ticket-${Date.now()}.jpg`)
 
   const response = await fetch(`${API_BASE_URL}/api/ai/upload-ticket`, {
     method: 'POST',
