@@ -1,6 +1,6 @@
 # Actualizaciones remotas de Finance AI
 
-La versión Android 1.1.0 está vinculada al proyecto EAS `@ebanega/finance-ai` y al canal `production`.
+La versión Android 1.2.0 está vinculada al proyecto EAS `@ebanega/finance-ai` y al canal `production`.
 
 ## Publicar cambios de interfaz o lógica
 
