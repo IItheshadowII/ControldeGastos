@@ -57,6 +57,12 @@ export async function logout() {
 
 export const getTransactions = () => request<Transaction[]>('/api/transactions')
 
+export async function getUsdRate(): Promise<number> {
+  const data = await request<{ rate?: number }>('/api/rates/usd-ars')
+  const rate = Number(data.rate)
+  return Number.isFinite(rate) && rate > 0 ? rate : 1
+}
+
 export const renewFixedExpenses = () =>
   request<{ created: number; skipped: number }>('/api/transactions/reset-month', { method: 'POST' })
 

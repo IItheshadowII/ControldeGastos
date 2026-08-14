@@ -21,6 +21,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import {
   deleteTransaction,
   getTransactions,
+  getUsdRate,
   login,
   logout,
   restoreSession,
@@ -99,6 +100,7 @@ function FinanceApp() {
   const [booting, setBooting] = useState(true)
   const [user, setUser] = useState<User | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [usdRate, setUsdRate] = useState(1)
   const [refreshing, setRefreshing] = useState(false)
   const [tab, setTab] = useState<Tab>('home')
   const [filter, setFilter] = useState<Filter>('ALL')
@@ -117,7 +119,12 @@ function FinanceApp() {
     if (!quiet) setRefreshing(true)
     try {
       await renewFixedExpenses()
-      setTransactions(await getTransactions())
+      const [nextTransactions, nextRate] = await Promise.all([
+        getTransactions(),
+        getUsdRate().catch(() => usdRate),
+      ])
+      setTransactions(nextTransactions)
+      setUsdRate(nextRate)
     } catch (error) {
       const status = (error as Error & { status?: number }).status
       if (status === 401) {
@@ -129,7 +136,7 @@ function FinanceApp() {
     } finally {
       setRefreshing(false)
     }
-  }, [])
+  }, [usdRate])
 
   useEffect(() => {
     if (user) loadTransactions(true)
@@ -173,6 +180,7 @@ function FinanceApp() {
         {tab === 'home' ? (
           <Dashboard
             transactions={transactions}
+            usdRate={usdRate}
             refreshing={refreshing}
             onRefresh={() => loadTransactions()}
             onCreate={openCreate}
@@ -321,19 +329,25 @@ function Header({ user, onLogout }: { user: User; onLogout: () => void }) {
   )
 }
 
-function Dashboard({ transactions, refreshing, onRefresh, onCreate, onEdit }: {
+function Dashboard({ transactions, usdRate, refreshing, onRefresh, onCreate, onEdit }: {
   transactions: Transaction[]
+  usdRate: number
   refreshing: boolean
   onRefresh: () => void
   onCreate: (type: TransactionType) => void
   onEdit: (item: Transaction) => void
 }) {
   const month = transactions.filter((item) => isCurrentMonth(item.date))
-  const income = month.filter((item) => item.type === 'INCOME' && item.currency === 'ARS').reduce((sum, item) => sum + item.amount, 0)
-  const expenses = month.filter((item) => item.type === 'EXPENSE' && item.currency === 'ARS').reduce((sum, item) => sum + item.amount, 0)
-  const pending = month.filter((item) => item.type === 'EXPENSE' && !item.isPaid && item.currency === 'ARS')
-  const balance = income - expenses
-  const savingRate = income > 0 ? Math.max(0, (balance / income) * 100) : 0
+  const toArs = (item: Transaction) => item.currency === 'USD' ? item.amount * usdRate : item.amount
+  const incomeItems = month.filter((item) => item.type === 'INCOME')
+  const expenseItems = month.filter((item) => item.type === 'EXPENSE')
+  const income = incomeItems.reduce((sum, item) => sum + toArs(item), 0)
+  const expenses = expenseItems.reduce((sum, item) => sum + toArs(item), 0)
+  const paidIncome = incomeItems.filter((item) => item.isPaid).reduce((sum, item) => sum + toArs(item), 0)
+  const paidExpenses = expenseItems.filter((item) => item.isPaid).reduce((sum, item) => sum + toArs(item), 0)
+  const pending = expenseItems.filter((item) => !item.isPaid)
+  const balance = paidIncome - paidExpenses
+  const savingRate = paidIncome > 0 ? Math.max(0, (balance / paidIncome) * 100) : 0
 
   return (
     <ScrollView
@@ -342,6 +356,10 @@ function Dashboard({ transactions, refreshing, onRefresh, onCreate, onEdit }: {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.green} />}
       showsVerticalScrollIndicator={false}
     >
+      <View style={styles.rateStrip}>
+        <Text style={styles.rateLabel}>DÓLAR OFICIAL · VENTA</Text>
+        <Text style={styles.rateValue}>{money(usdRate)}</Text>
+      </View>
       <LinearGradient colors={['#10251f', '#0b1110', '#0a0c0e']} style={styles.balanceCard}>
         <View style={styles.balanceHeader}>
           <Text style={styles.eyebrow}>BALANCE DEL MES</Text>
@@ -368,7 +386,7 @@ function Dashboard({ transactions, refreshing, onRefresh, onCreate, onEdit }: {
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Pendientes</Text>
-        <Text style={[styles.sectionTotal, { color: colors.amber }]}>{money(pending.reduce((sum, item) => sum + item.amount, 0))}</Text>
+        <Text style={[styles.sectionTotal, { color: colors.amber }]}>{money(pending.reduce((sum, item) => sum + toArs(item), 0))}</Text>
       </View>
       <View style={styles.listCard}>
         {pending.length === 0 ? (
@@ -693,6 +711,9 @@ const styles = StyleSheet.create({
   avatarText: { color: '#15171a', fontSize: 15, fontWeight: '800' },
   content: { flex: 1 },
   dashboardContent: { padding: 18 },
+  rateStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, marginBottom: 10 },
+  rateLabel: { color: '#6f7781', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 },
+  rateValue: { color: colors.blue, fontSize: 11, fontWeight: '800' },
   balanceCard: { borderRadius: 24, borderWidth: 1, borderColor: '#1d332c', padding: 22, minHeight: 168 },
   balanceHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   positivePill: { backgroundColor: '#00d89a15', borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 },
