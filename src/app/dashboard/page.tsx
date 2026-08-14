@@ -843,6 +843,26 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
         return typeMatch && paymentMatch && currencyMatch && searchMatch && monthMatch
     })
 
+    const filteredTotals = filtered.reduce((totals, transaction) => {
+        const currency = transaction.currency === 'USD' ? 'USD' : 'ARS'
+        totals[currency] += Number(transaction.amount) || 0
+        return totals
+    }, { ARS: 0, USD: 0 })
+
+    const resultLabel = filter === 'EXPENSE'
+        ? 'Total de gastos'
+        : filter === 'INCOME'
+            ? 'Total de ingresos'
+            : filter === 'SAVINGS'
+                ? 'Total ahorrado'
+                : filter === 'LOAN'
+                    ? 'Total de préstamos'
+                    : 'Total de movimientos'
+
+    const selectedPeriodLabel = selectedMonth
+        ? new Date(`${selectedMonth}-01T12:00:00`).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })
+        : 'Todos los períodos'
+
     const handleTogglePaid = async (transactionId: string, currentStatus: boolean, loanStatus?: string) => {
         try {
             const body = loanStatus
@@ -974,6 +994,23 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
             </div>
 
             <div className="flex-1 overflow-auto p-6 md:p-8">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                    <div className="rounded-[16px] border border-white/10 bg-white/[0.025] px-5 py-4">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/30">Resultados</p>
+                        <p className="mt-2 text-xl font-bold text-white">{filtered.length}</p>
+                        <p className="mt-1 text-[10px] capitalize text-white/30">{selectedPeriodLabel}</p>
+                    </div>
+                    <div className="rounded-[16px] border border-white/10 bg-white/[0.025] px-5 py-4">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/30">{resultLabel} ARS</p>
+                        <p className="mt-2 text-xl font-bold tabular-nums text-white">$ {filteredTotals.ARS.toLocaleString('es-AR')}</p>
+                        <p className="mt-1 text-[10px] text-white/30">Según los filtros activos</p>
+                    </div>
+                    <div className="rounded-[16px] border border-blue-500/20 bg-blue-500/[0.035] px-5 py-4">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-blue-400/60">{resultLabel} USD</p>
+                        <p className="mt-2 text-xl font-bold tabular-nums text-blue-400">U$D {filteredTotals.USD.toLocaleString('es-AR')}</p>
+                        <p className="mt-1 text-[10px] text-white/30">Sin convertir a pesos</p>
+                    </div>
+                </div>
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-white/[0.03] font-bold text-[10px] uppercase text-white/30 tracking-widest">
                         <tr>
