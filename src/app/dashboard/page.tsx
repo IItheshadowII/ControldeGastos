@@ -23,7 +23,6 @@ import { SavingsChart } from "@/components/SavingsChart"
 import { MonthlyOverview } from "@/components/MonthlyOverview"
 import { AIRecommendations } from "@/components/AIRecommendations"
 import { ReportGenerator } from "@/components/ReportGenerator"
-import { SavingsGoalForm } from '@/components/SavingsGoalForm'
 import SettingsPage from '@/app/settings/page'
 import { UsersManagement } from '@/components/UsersManagement'
 
@@ -46,7 +45,6 @@ export default function DashboardPage() {
     const [isLoanModalOpen, setIsLoanModalOpen] = useState(false)
     const [isAIModalOpen, setIsAIModalOpen] = useState(false)
     const [isReportModalOpen, setIsReportModalOpen] = useState(false)
-    const [isSavingsModalOpen, setIsSavingsModalOpen] = useState(false)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [editingTransaction, setEditingTransaction] = useState<any | null>(null)
     const [usdRate, setUsdRate] = useState<number>(1)
@@ -54,7 +52,6 @@ export default function DashboardPage() {
     // Data States
     const [chartData, setChartData] = useState<{ name: string, income: number, expenses: number }[]>([])
     const [transactions, setTransactions] = useState<any[]>([])
-    const [savingsRefreshKey, setSavingsRefreshKey] = useState(0)
 
     // Command Palette Keyboard Shortcut
     useEffect(() => {
@@ -255,8 +252,6 @@ export default function DashboardPage() {
                     <SavingsGoalsView
                         transactions={transactions}
                         usdRate={usdRate}
-                        refreshKey={savingsRefreshKey}
-                        onCreate={() => setIsSavingsModalOpen(true)}
                     />
                 )
             case 'SETTINGS':
@@ -612,14 +607,6 @@ export default function DashboardPage() {
                         />
                     </Modal>
                 )}
-                {isSavingsModalOpen && (
-                    <Modal isOpen={isSavingsModalOpen} onClose={() => setIsSavingsModalOpen(false)} title="Meta de Ahorro">
-                        <SavingsGoalForm onSaved={() => {
-                            setIsSavingsModalOpen(false)
-                            setSavingsRefreshKey(key => key + 1)
-                        }} />
-                    </Modal>
-                )}
             </AnimatePresence>
 
             {/* Command Menu */}
@@ -650,13 +637,15 @@ interface SavingsGoal {
     visible?: boolean
 }
 
-function SavingsGoalsView({ transactions, usdRate, refreshKey, onCreate }: {
+function SavingsGoalsView({ transactions, usdRate }: {
     transactions: any[]
     usdRate: number
-    refreshKey: number
-    onCreate: () => void
 }) {
     const [goals, setGoals] = useState<SavingsGoal[]>([])
+    const [isFormOpen, setIsFormOpen] = useState(false)
+    const [editingGoalId, setEditingGoalId] = useState<string | null>(null)
+    const [goalName, setGoalName] = useState('')
+    const [goalAmount, setGoalAmount] = useState('')
 
     const loadGoals = () => {
         try {
@@ -670,7 +659,7 @@ function SavingsGoalsView({ transactions, usdRate, refreshKey, onCreate }: {
 
     useEffect(() => {
         loadGoals()
-    }, [refreshKey])
+    }, [])
 
     const persistGoals = (next: SavingsGoal[]) => {
         localStorage.setItem('savingsGoals', JSON.stringify(next))
@@ -684,6 +673,38 @@ function SavingsGoalsView({ transactions, usdRate, refreshKey, onCreate }: {
     const deleteGoal = (id: string) => {
         if (!confirm('¿Querés eliminar esta meta de ahorro?')) return
         persistGoals(goals.filter(goal => goal.id !== id))
+    }
+
+    const openGoalForm = (goal?: SavingsGoal) => {
+        setEditingGoalId(goal?.id || null)
+        setGoalName(goal?.name || '')
+        setGoalAmount(goal ? String(goal.amount) : '')
+        setIsFormOpen(true)
+    }
+
+    const closeGoalForm = () => {
+        setIsFormOpen(false)
+        setEditingGoalId(null)
+        setGoalName('')
+        setGoalAmount('')
+    }
+
+    const saveGoal = () => {
+        const name = goalName.trim()
+        const amount = Number(goalAmount)
+        if (!name || !Number.isFinite(amount) || amount <= 0) return
+
+        const goal: SavingsGoal = {
+            id: editingGoalId || `${Date.now()}-${Math.round(Math.random() * 10000)}`,
+            name,
+            amount,
+            visible: true,
+        }
+        const next = editingGoalId
+            ? goals.map(current => current.id === editingGoalId ? { ...current, ...goal } : current)
+            : [goal, ...goals]
+        persistGoals(next)
+        closeGoalForm()
     }
 
     const rate = usdRate > 0 ? usdRate : 1
@@ -704,10 +725,39 @@ function SavingsGoalsView({ transactions, usdRate, refreshKey, onCreate }: {
                     <h2 className="text-2xl font-bold tracking-tight">Tus ahorros pretendidos</h2>
                     <p className="text-sm text-white/40 mt-2">Organizá tus objetivos y seguí cuánto te falta para alcanzarlos.</p>
                 </div>
-                <Button onClick={onCreate} variant="glow">
+                <Button onClick={() => isFormOpen ? closeGoalForm() : openGoalForm()} variant="glow">
                     <Plus className="w-4 h-4 mr-2" /> Nueva meta
                 </Button>
             </div>
+
+            <AnimatePresence>
+                {isFormOpen && (
+                    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                        <Card className="!p-6 !rounded-[22px] border-blue-500/20 bg-gradient-to-br from-blue-500/[0.08] to-transparent">
+                            <div className="flex items-center justify-between gap-4 mb-5">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 mb-1">{editingGoalId ? 'Editar objetivo' : 'Nuevo objetivo'}</p>
+                                    <h3 className="text-lg font-bold">{editingGoalId ? 'Actualizá tu meta' : 'Creá una meta de ahorro'}</h3>
+                                </div>
+                                <button onClick={closeGoalForm} className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/5" aria-label="Cerrar formulario"><X className="w-5 h-5" /></button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-[1fr_0.7fr_auto] gap-3 items-end">
+                                <label className="space-y-2">
+                                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">Nombre de la meta</span>
+                                    <input value={goalName} onChange={event => setGoalName(event.target.value)} className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-blue-500/50" placeholder="Ej: Auto nuevo" autoFocus />
+                                </label>
+                                <label className="space-y-2">
+                                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">Monto objetivo (ARS)</span>
+                                    <input value={goalAmount} onChange={event => setGoalAmount(event.target.value)} type="number" min="1" className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-blue-500/50" placeholder="0" />
+                                </label>
+                                <button onClick={saveGoal} disabled={!goalName.trim() || Number(goalAmount) <= 0} className="h-12 px-6 rounded-xl bg-blue-600 text-white text-xs font-bold uppercase tracking-wider hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
+                                    {editingGoalId ? 'Guardar cambios' : 'Añadir meta'}
+                                </button>
+                            </div>
+                        </Card>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <SavingsSummaryCard label="Objetivo total" value={`$ ${totalTarget.toLocaleString('es-AR')}`} detail={`${goals.length} ${goals.length === 1 ? 'meta' : 'metas'}`} icon={<Target className="w-5 h-5" />} />
@@ -722,7 +772,7 @@ function SavingsGoalsView({ transactions, usdRate, refreshKey, onCreate }: {
                     </div>
                     <h3 className="text-lg font-bold">Todavía no tenés metas de ahorro</h3>
                     <p className="text-sm text-white/40 mt-2 mb-6">Creá tu primer objetivo para verlo y seguir su avance desde acá.</p>
-                    <Button onClick={onCreate} variant="glow"><Plus className="w-4 h-4 mr-2" /> Crear primera meta</Button>
+                    <Button onClick={() => openGoalForm()} variant="glow"><Plus className="w-4 h-4 mr-2" /> Crear primera meta</Button>
                 </Card>
             ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -741,6 +791,7 @@ function SavingsGoalsView({ transactions, usdRate, refreshKey, onCreate }: {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
+                                        <button onClick={() => openGoalForm(goal)} title="Editar meta" className="p-2 rounded-lg text-white/35 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"><Edit3 className="w-4 h-4" /></button>
                                         <button onClick={() => toggleVisibility(goal.id)} title="Ocultar meta" className="p-2 rounded-lg text-white/35 hover:text-white hover:bg-white/5 transition-colors"><EyeOff className="w-4 h-4" /></button>
                                         <button onClick={() => deleteGoal(goal.id)} title="Eliminar meta" className="p-2 rounded-lg text-white/35 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
                                     </div>
