@@ -57,6 +57,9 @@ export async function logout() {
 
 export const getTransactions = () => request<Transaction[]>('/api/transactions')
 
+export const renewFixedExpenses = () =>
+  request<{ created: number; skipped: number }>('/api/transactions/reset-month', { method: 'POST' })
+
 export async function saveTransaction(draft: TransactionDraft, id?: string) {
   const normalizedAmount = Number(draft.amount.replace(/\./g, '').replace(',', '.'))
   const body = {

@@ -24,6 +24,7 @@ import {
   login,
   logout,
   restoreSession,
+  renewFixedExpenses,
   saveTransaction,
   setPaid,
 } from './src/api'
@@ -115,6 +116,7 @@ function FinanceApp() {
   const loadTransactions = useCallback(async (quiet = false) => {
     if (!quiet) setRefreshing(true)
     try {
+      await renewFixedExpenses()
       setTransactions(await getTransactions())
     } catch (error) {
       const status = (error as Error & { status?: number }).status
