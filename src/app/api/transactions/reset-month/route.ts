@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client"
 import { authFromRequest } from "@/auth"
 import prisma from "@/lib/prisma"
 import { broadcastRealtime } from "@/lib/realtime"
+import { auditRequestMetadata, writeAudit } from "@/lib/audit"
 
 const recurringKey = (transaction: { description: string; currency: string }) =>
     `${transaction.description.trim().toLocaleLowerCase()}::${transaction.currency}`
@@ -19,6 +20,7 @@ export async function POST(req: NextRequest) {
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
     const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
     const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const metadata = auditRequestMetadata(req)
 
     try {
         let result: { created: number; skipped: number } | null = null
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest) {
                         }
                         previousKeys.add(key)
 
-                        await db.transaction.create({
+                        const createdTransaction = await db.transaction.create({
                             data: {
                                 description: expense.description,
                                 amount: 0,
@@ -82,6 +84,15 @@ export async function POST(req: NextRequest) {
                                 date: currentMonthStart,
                                 userId,
                             },
+                        })
+                        await writeAudit(db, {
+                            actor: session.user,
+                            action: "CREATE",
+                            entityType: "TRANSACTION",
+                            entityId: createdTransaction.id,
+                            description: `${createdTransaction.description} (renovación mensual automática)`,
+                            after: createdTransaction,
+                            ...metadata,
                         })
                         existingKeys.add(key)
                         created += 1

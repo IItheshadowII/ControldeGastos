@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { auth } from "@/auth"
 import bcrypt from "bcryptjs"
+import { auditRequestMetadata, publicUserSnapshot, writeAudit } from "@/lib/audit"
 
 async function requireAdmin() {
     // Intento 1: si hay sesión y el usuario es admin, úsalo
@@ -57,14 +58,27 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 10)
 
-    const user = await prisma.user.create({
-        data: {
-            email,
-            name: name || email.split("@")[0],
-            passwordHash,
-            isActive: true,
-            isAdmin: !!isAdmin,
-        },
+    const metadata = auditRequestMetadata(req)
+    const user = await prisma.$transaction(async (db) => {
+        const created = await db.user.create({
+            data: {
+                email,
+                name: name || email.split("@")[0],
+                passwordHash,
+                isActive: true,
+                isAdmin: !!isAdmin,
+            },
+        })
+        await writeAudit(db, {
+            actor: me,
+            action: "CREATE",
+            entityType: "USER",
+            entityId: created.id,
+            description: created.email,
+            after: publicUserSnapshot(created),
+            ...metadata,
+        })
+        return created
     })
 
     return NextResponse.json({ id: user.id, name: user.name, email: user.email, isActive: user.isActive, isAdmin: user.isAdmin })

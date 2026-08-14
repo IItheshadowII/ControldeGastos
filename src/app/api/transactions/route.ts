@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authFromRequest } from "@/auth";
 import prisma from "@/lib/prisma";
 import { broadcastRealtime } from "@/lib/realtime";
+import { auditRequestMetadata, writeAudit } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
     const session = await authFromRequest(req);
@@ -76,13 +77,28 @@ export async function POST(req: NextRequest) {
         allowedFields.date = new Date(data.date);
     }
 
-    const transaction = await prisma.transaction.create({
-        data: {
-            ...allowedFields,
-            amount: amountNumber,
-            userId,
-            date: allowedFields.date ? allowedFields.date as Date : new Date(),
-        },
+    const metadata = auditRequestMetadata(req);
+    const transaction = await prisma.$transaction(async (db) => {
+        const created = await db.transaction.create({
+            data: {
+                ...allowedFields,
+                amount: amountNumber,
+                userId,
+                date: allowedFields.date ? allowedFields.date as Date : new Date(),
+            },
+        });
+
+        await writeAudit(db, {
+            actor: session.user,
+            action: "CREATE",
+            entityType: "TRANSACTION",
+            entityId: created.id,
+            description: created.description,
+            after: created,
+            ...metadata,
+        });
+
+        return created;
     });
 
     broadcastRealtime('transactions.changed', { action: 'created', id: transaction.id });

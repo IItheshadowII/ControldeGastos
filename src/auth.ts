@@ -12,6 +12,7 @@ export type AppSession = {
         name: string | null
         email: string | null
         image?: string | null
+        isAdmin: boolean
     }
     expires: string
     sessionToken: string
@@ -40,6 +41,7 @@ export const auth = async (): Promise<AppSession | null> => {
             name: session.user.name,
             email: session.user.email,
             image: session.user.image,
+            isAdmin: session.user.isAdmin,
         },
         expires: session.expires.toISOString(),
         sessionToken: token,
@@ -77,6 +79,7 @@ export async function authFromRequest(req: NextRequest): Promise<AppSession | nu
             name: session.user.name,
             email: session.user.email,
             image: session.user.image,
+            isAdmin: session.user.isAdmin,
         },
         expires: session.expires.toISOString(),
         sessionToken: token,
@@ -112,6 +115,7 @@ export async function signInWithCredentials(email: string, password: string, nam
             name: user.name,
             email: user.email,
             image: user.image,
+            isAdmin: user.isAdmin,
         },
         expires: expires.toISOString(),
         sessionToken,

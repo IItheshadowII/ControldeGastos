@@ -8,18 +8,18 @@ datasource db {
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -35,19 +35,20 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String        @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String?       @unique
   emailVerified DateTime?
   image         String?
   passwordHash  String?
-  isActive      Boolean   @default(true)
-  isAdmin       Boolean   @default(false)
+  isActive      Boolean       @default(true)
+  isAdmin       Boolean       @default(false)
   accounts      Account[]
   sessions      Session[]
   transactions  Transaction[]
   aiConfigs     AIConfig[]
   pushTokens    PushToken[]
+  auditLogs     AuditLog[]    @relation("AuditActor")
 }
 
 model VerificationToken {
@@ -58,7 +59,6 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-
 model Transaction {
   id               String   @id @default(cuid())
   userId           String
@@ -66,12 +66,12 @@ model Transaction {
   amount           Float
   currency         String   @default("ARS")
   type             String
-  incomeType       String?  // Only for income
+  incomeType       String? // Only for income
   frequency        String   @default("VARIABLE") // Fixed or Variable
   isPaid           Boolean  @default(false) // Payment status (for expenses or loans)
   isSavings        Boolean  @default(false)
-  loanType         String?  // "LENT" = presté dinero / "BORROWED" = me prestaron
-  loanStatus       String?  // "PENDING" / "PAID"
+  loanType         String? // "LENT" = presté dinero / "BORROWED" = me prestaron
+  loanStatus       String? // "PENDING" / "PAID"
   loanParty        String?
   loanInstallments Int?
   loanNotes        String?
@@ -81,12 +81,12 @@ model Transaction {
 }
 
 model AIConfig {
-  id           String @id @default(cuid())
-  userId       String
-  provider     String // OpenAI, Gemini, etc.
-  apiKey       String
-  modelName    String?
-  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  userId    String
+  provider  String // OpenAI, Gemini, etc.
+  apiKey    String
+  modelName String?
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PushToken {
@@ -100,4 +100,27 @@ model PushToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId     String?
+  actorName   String?
+  actorEmail  String?
+  action      String
+  entityType  String
+  entityId    String?
+  description String?
+  before      Json?
+  after       Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([action])
 }

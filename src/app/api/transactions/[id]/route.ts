@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authFromRequest } from "@/auth";
 import prisma from "@/lib/prisma";
 import { broadcastRealtime } from "@/lib/realtime";
+import { auditRequestMetadata, writeAudit } from "@/lib/audit";
 
 export async function PATCH(
     req: NextRequest,
@@ -64,9 +65,25 @@ export async function PATCH(
         updateData.date = new Date(data.date);
     }
 
-    const updated = await prisma.transaction.update({
-        where: { id },
-        data: updateData,
+    const metadata = auditRequestMetadata(req);
+    const updated = await prisma.$transaction(async (db) => {
+        const result = await db.transaction.update({
+            where: { id },
+            data: updateData,
+        });
+
+        await writeAudit(db, {
+            actor: session.user,
+            action: "UPDATE",
+            entityType: "TRANSACTION",
+            entityId: id,
+            description: result.description,
+            before: existing,
+            after: result,
+            ...metadata,
+        });
+
+        return result;
     });
 
     broadcastRealtime('transactions.changed', { action: 'updated', id });
@@ -86,8 +103,19 @@ export async function DELETE(
     const existing = await prisma.transaction.findFirst({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    await prisma.transaction.delete({
-        where: { id },
+    const metadata = auditRequestMetadata(req);
+    await prisma.$transaction(async (db) => {
+        await writeAudit(db, {
+            actor: session.user,
+            action: "DELETE",
+            entityType: "TRANSACTION",
+            entityId: id,
+            description: existing.description,
+            before: existing,
+            ...metadata,
+        });
+
+        await db.transaction.delete({ where: { id } });
     });
 
     broadcastRealtime('transactions.changed', { action: 'deleted', id });

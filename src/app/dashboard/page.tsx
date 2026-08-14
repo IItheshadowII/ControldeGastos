@@ -25,8 +25,9 @@ import { AIRecommendations } from "@/components/AIRecommendations"
 import { ReportGenerator } from "@/components/ReportGenerator"
 import SettingsPage from '@/app/settings/page'
 import { UsersManagement } from '@/components/UsersManagement'
+import { AuditLog } from '@/components/AuditLog'
 
-type ViewState = 'DASHBOARD' | 'TRANSACTIONS' | 'ANALYTICS' | 'SAVINGS' | 'SETTINGS' | 'USERS'
+type ViewState = 'DASHBOARD' | 'TRANSACTIONS' | 'ANALYTICS' | 'SAVINGS' | 'SETTINGS' | 'USERS' | 'AUDIT'
 
 export default function DashboardPage() {
     // Estado de sesión: intentamos cargar el usuario real desde el backend, si no existe usamos un genérico
@@ -258,6 +259,8 @@ export default function DashboardPage() {
                 return <SettingsPage />
             case 'USERS':
                 return <UsersManagement />
+            case 'AUDIT':
+                return <AuditLog />
             case 'DASHBOARD':
             default:
                 return (
@@ -455,6 +458,7 @@ export default function DashboardPage() {
                 setIsOpen={setIsSidebarOpen}
                 currentView={currentView}
                 setCurrentView={setCurrentView}
+                isAdmin={!!session?.user?.isAdmin}
             />
 
             {/* Main Content Wrapper */}
@@ -479,7 +483,7 @@ export default function DashboardPage() {
                                         Hola, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">{session?.user?.name ? session.user.name.split(' ')[0] : 'Usuario'}</span>
                                     </h1>
                                     <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
-                                        {currentView === 'DASHBOARD' ? 'Panel de Control' : currentView === 'SAVINGS' ? 'Ahorro Pretendido' : currentView}
+                                        {currentView === 'DASHBOARD' ? 'Panel de Control' : currentView === 'SAVINGS' ? 'Ahorro Pretendido' : currentView === 'AUDIT' ? 'Auditoría de Cambios' : currentView}
                                     </p>
                                 </div>
                             </div>
@@ -988,7 +992,7 @@ function SavingsAdviceSection({ transactions, usdRate, goals, totalSaved }: {
     )
 }
 
-function DesktopSidebar({ isOpen, setIsOpen, currentView, setCurrentView }: any) {
+function DesktopSidebar({ isOpen, setIsOpen, currentView, setCurrentView, isAdmin }: any) {
     return (
         <motion.aside
             initial={false}
@@ -1055,6 +1059,15 @@ function DesktopSidebar({ isOpen, setIsOpen, currentView, setCurrentView }: any)
                     active={currentView === 'USERS'}
                     onClick={() => setCurrentView('USERS')}
                 />
+                {isAdmin && (
+                    <SidebarItem
+                        icon={<Activity className="w-5 h-5" />}
+                        label="Auditoría"
+                        isOpen={isOpen}
+                        active={currentView === 'AUDIT'}
+                        onClick={() => setCurrentView('AUDIT')}
+                    />
+                )}
             </nav>
 
             <div className="p-3 border-t border-white/5">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { auth } from "@/auth"
 import bcrypt from "bcryptjs"
+import { auditRequestMetadata, publicUserSnapshot, writeAudit } from "@/lib/audit"
 
 async function requireAdmin() {
     // Intento 1: si hay sesión y el usuario es admin, úsalo
@@ -20,6 +21,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!me) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const { id } = await params
+    const existing = await prisma.user.findUnique({ where: { id } })
+    if (!existing) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
     const body = await req.json().catch(() => ({})) as {
         name?: string
         password?: string
@@ -35,9 +38,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         data.passwordHash = await bcrypt.hash(body.password, 10)
     }
 
-    const updated = await prisma.user.update({
-        where: { id },
-        data,
+    const metadata = auditRequestMetadata(req)
+    const updated = await prisma.$transaction(async (db) => {
+        const result = await db.user.update({ where: { id }, data })
+        await writeAudit(db, {
+            actor: me,
+            action: "UPDATE",
+            entityType: "USER",
+            entityId: id,
+            description: result.email,
+            before: publicUserSnapshot(existing),
+            after: {
+                ...publicUserSnapshot(result),
+                ...(body.password ? { passwordChanged: true } : {}),
+            },
+            ...metadata,
+        })
+        return result
     })
 
     return NextResponse.json({ id: updated.id, name: updated.name, email: updated.email, isActive: updated.isActive, isAdmin: updated.isAdmin })
@@ -69,7 +86,19 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         }
     }
 
-    await prisma.user.delete({ where: { id } })
+    const metadata = auditRequestMetadata(req)
+    await prisma.$transaction(async (db) => {
+        await writeAudit(db, {
+            actor: me,
+            action: "DELETE",
+            entityType: "USER",
+            entityId: id,
+            description: target.email,
+            before: publicUserSnapshot(target),
+            ...metadata,
+        })
+        await db.user.delete({ where: { id } })
+    })
 
     return NextResponse.json({ success: true })
 }
