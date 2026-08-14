@@ -805,6 +805,7 @@ function ActionButton({ onClick, icon, label, color, full = false }: any) {
 function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: any[], onUpdate?: () => void, onEdit?: (t: any) => void }) {
     const [filter, setFilter] = useState('ALL')
     const [paymentFilter, setPaymentFilter] = useState('ALL')
+    const [currencyFilter, setCurrencyFilter] = useState('ALL')
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedMonth, setSelectedMonth] = useState<string>('')
 
@@ -821,6 +822,9 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
             || (paymentFilter === 'PAID' && ((isLoan && t.loanStatus === 'PAID') || (!isLoan && t.isPaid)))
             || (paymentFilter === 'PENDING' && ((isLoan && t.loanStatus === 'PENDING') || (!isLoan && !t.isPaid && t.type === 'EXPENSE')))
 
+        // Filter by Currency
+        const currencyMatch = currencyFilter === 'ALL' || t.currency === currencyFilter
+
         // Filter by Search Term
         const searchMatch = searchTerm === '' ||
             t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -832,7 +836,7 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
         const monthMatch = selectedMonth === '' ||
             `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` === selectedMonth
 
-        return typeMatch && paymentMatch && searchMatch && monthMatch
+        return typeMatch && paymentMatch && currencyMatch && searchMatch && monthMatch
     })
 
     const handleTogglePaid = async (transactionId: string, currentStatus: boolean, loanStatus?: string) => {
@@ -941,6 +945,24 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
                                     }`}
                             >
                                 {f === 'ALL' ? 'Todos' : f === 'PAID' ? 'Pagados' : 'Pendientes'}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="w-[1px] h-6 bg-white/10 hidden md:block" />
+                    <div className="flex gap-2 items-center">
+                        <span className="text-[10px] text-white/30 font-bold uppercase tracking-wider">Moneda:</span>
+                        {['ALL', 'ARS', 'USD'].map((currency) => (
+                            <button
+                                key={currency}
+                                onClick={() => setCurrencyFilter(currency)}
+                                className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider border transition-all ${currencyFilter === currency
+                                    ? currency === 'USD'
+                                        ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                                        : 'bg-white text-black border-white'
+                                    : 'bg-transparent text-white/40 border-white/10 hover:border-white/30'
+                                    }`}
+                            >
+                                {currency === 'ALL' ? 'Todas' : currency}
                             </button>
                         ))}
                     </div>
