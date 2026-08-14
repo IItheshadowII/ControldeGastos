@@ -65,11 +65,11 @@ export const DashboardStats = ({ transactions, usdRate = 1 }: DashboardStatsProp
             .reduce((acc, t) => acc + t.amount, 0)
 
         const totalExpensesARS = currentMonth
-            .filter(t => t.type === 'EXPENSE' && t.currency === 'ARS')
+            .filter(t => t.type === 'EXPENSE' && !t.isSavings && t.currency === 'ARS')
             .reduce((acc, t) => acc + t.amount, 0)
 
         const totalExpensesUSD = currentMonth
-            .filter(t => t.type === 'EXPENSE' && t.currency === 'USD')
+            .filter(t => t.type === 'EXPENSE' && !t.isSavings && t.currency === 'USD')
             .reduce((acc, t) => acc + t.amount, 0)
 
         // Totales pagados (solo items con isPaid === true) — usados para calcular Balance Neto
@@ -82,11 +82,11 @@ export const DashboardStats = ({ transactions, usdRate = 1 }: DashboardStatsProp
             .reduce((acc, t) => acc + t.amount, 0)
 
         const paidExpensesARS = currentMonth
-            .filter(t => t.type === 'EXPENSE' && t.currency === 'ARS' && t.isPaid)
+            .filter(t => t.type === 'EXPENSE' && !t.isSavings && t.currency === 'ARS' && t.isPaid)
             .reduce((acc, t) => acc + t.amount, 0)
 
         const paidExpensesUSD = currentMonth
-            .filter(t => t.type === 'EXPENSE' && t.currency === 'USD' && t.isPaid)
+            .filter(t => t.type === 'EXPENSE' && !t.isSavings && t.currency === 'USD' && t.isPaid)
             .reduce((acc, t) => acc + t.amount, 0)
 
         // Convertimos todo a ARS usando la cotización configurada

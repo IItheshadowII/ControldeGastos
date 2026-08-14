@@ -77,7 +77,7 @@ export default function DashboardPage() {
                 const transformed = months.map((m, i) => {
                     const monthData = data.filter((t: any) => new Date(t.date).getMonth() === i)
                     const income = monthData.filter((t: any) => t.type === 'INCOME').reduce((acc: any, t: any) => acc + t.amount, 0)
-                    const expenses = monthData.filter((t: any) => t.type === 'EXPENSE').reduce((acc: any, t: any) => acc + t.amount, 0)
+                    const expenses = monthData.filter((t: any) => t.type === 'EXPENSE' && !t.isSavings).reduce((acc: any, t: any) => acc + t.amount, 0)
                     return { name: m, income, expenses }
                 }).filter(m => m.income > 0 || m.expenses > 0)
                 setChartData(transformed)
@@ -282,7 +282,7 @@ export default function DashboardPage() {
                                             <h3 className="text-xs font-bold text-white/30 uppercase tracking-widest mb-2">Gastos por Pagar</h3>
                                             <div className="text-2xl font-bold tracking-tighter text-amber-400 mb-1">
                                                 $ {transactions
-                                                    .filter(t => t.type === 'EXPENSE' && !t.isPaid)
+                                                    .filter(t => t.type === 'EXPENSE' && !t.isSavings && !t.isPaid)
                                                     .reduce((acc, t) => {
                                                         const rate = usdRate > 0 ? usdRate : 1
                                                         if (t.currency === 'USD') return acc + t.amount * rate
@@ -293,7 +293,7 @@ export default function DashboardPage() {
                                             <div className="flex items-center gap-2 text-white/40">
                                                 <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                                                 <p className="text-xs font-medium">
-                                                    {transactions.filter(t => t.type === 'EXPENSE' && !t.isPaid).length} gastos pendientes
+                                                    {transactions.filter(t => t.type === 'EXPENSE' && !t.isSavings && !t.isPaid).length} gastos pendientes
                                                 </p>
                                             </div>
                                         </div>
@@ -379,25 +379,25 @@ export default function DashboardPage() {
                                                 className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3 rounded-[14px] hover:bg-white/5 transition-colors group border border-transparent hover:border-white/5 cursor-pointer focus:outline-none focus-visible:border-blue-500/40 focus-visible:bg-white/[0.04]"
                                             >
                                                 <div className="flex min-w-0 items-center gap-3">
-                                                    <div className={`p-2 rounded-[10px] shrink-0 ${t.loanType ? 'bg-violet-500/10 text-violet-300' : t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                                                        {t.loanType ? <Sparkles className="w-4 h-4" /> : t.type === 'INCOME' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                                                    <div className={`p-2 rounded-[10px] shrink-0 ${t.isSavings ? 'bg-blue-500/10 text-blue-400' : t.loanType ? 'bg-violet-500/10 text-violet-300' : t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                                                        {t.isSavings ? <PiggyBank className="w-4 h-4" /> : t.loanType ? <Sparkles className="w-4 h-4" /> : t.type === 'INCOME' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                                                     </div>
                                                     <div className="flex min-w-0 flex-col">
                                                         <span className="text-sm font-bold text-white/90 group-hover:text-white truncate">
                                                             {t.description || 'Sin descripción'}
                                                         </span>
                                                         <span className="text-[10px] text-white/40 truncate">
-                                                            {t.loanType ? `${t.loanParty || 'Préstamo'} · ${t.loanStatus || 'Pendiente'}` : (t.category && t.category.toLowerCase()) || 'Varios'} · {new Date(t.date).toLocaleDateString()}
+                                                            {t.isSavings ? 'Ahorro' : t.loanType ? `${t.loanParty || 'Préstamo'} · ${t.loanStatus || 'Pendiente'}` : (t.category && t.category.toLowerCase()) || 'Varios'} · {new Date(t.date).toLocaleDateString()}
                                                         </span>
                                                     </div>
                                                 </div>
 
                                                 <div className="flex items-center gap-2">
                                                     <div className="text-right">
-                                                        <span className={`whitespace-nowrap text-xs font-bold ${t.loanType ? 'text-violet-300' : t.type === 'INCOME' ? 'text-emerald-400' : 'text-white/70'}`}>
+                                                        <span className={`whitespace-nowrap text-xs font-bold ${t.isSavings ? 'text-blue-400' : t.loanType ? 'text-violet-300' : t.type === 'INCOME' ? 'text-emerald-400' : 'text-white/70'}`}>
                                                             {t.currency === 'USD' ? 'U$D' : '$'} {t.amount.toLocaleString()}
                                                         </span>
-                                                        {(t.type === 'EXPENSE' || t.loanType) && (
+                                                        {!t.isSavings && (t.type === 'EXPENSE' || t.loanType) && (
                                                             <button onClick={(event) => { event.stopPropagation(); handleTogglePaid(t.id, t.isPaid, t.loanStatus) }} className={`mt-1 ml-auto flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${t.isPaid || t.loanStatus === 'PAID' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-amber-500/10 border-amber-500/30 text-amber-400'}`} title={t.isPaid || t.loanStatus === 'PAID' ? 'Desmarcar pagado' : 'Marcar como pagado'}>
                                                                 {t.isPaid || t.loanStatus === 'PAID' ? <CheckCircle2 className="w-3 h-3" /> : null}
                                                                 {t.isPaid || t.loanStatus === 'PAID' ? 'Pagado' : 'Pendiente'}
@@ -493,6 +493,7 @@ export default function DashboardPage() {
 
                                     const totalExpensesARS = transactions.reduce((acc, t) => {
                                         if (t.type !== 'EXPENSE') return acc
+                                        if (t.isSavings) return acc
                                         if (!t.isPaid) return acc
                                         return acc + (t.currency === 'USD' ? t.amount * rate : t.amount)
                                     }, 0)
@@ -507,7 +508,8 @@ export default function DashboardPage() {
                                         />
                                     )
                                 })()}
-                                <SummaryCard label="Gastos USD" amount={transactions.reduce((acc, t) => t.type === 'EXPENSE' && t.currency === 'USD' ? acc + t.amount : acc, 0).toLocaleString()} currency="USD" />
+                                <SummaryCard label="Gastos USD" amount={transactions.reduce((acc, t) => t.type === 'EXPENSE' && !t.isSavings && t.currency === 'USD' ? acc + t.amount : acc, 0).toLocaleString()} currency="USD" />
+                                <SummaryCard label="Ahorro USD" amount={transactions.reduce((acc, t) => t.isSavings && t.currency === 'USD' ? acc + t.amount : acc, 0).toLocaleString()} currency="USD" trend="neutral" />
                             </div>
                         </div>
 
@@ -761,10 +763,10 @@ function SummaryCard({ label, amount, currency, trend = "up" }: { label: string,
                     {amount}
                 </span>
             </div>
-            <div className={`mt-1 flex items-center gap-1.5 text-[9px] font-bold ${trend === 'up' ? 'text-emerald-500' : 'text-rose-500'} relative z-10`}>
-                <div className={`w-1.5 h-1.5 rounded-full ${trend === 'up' ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`} />
-                {trend === 'up' ? '+2.4%' : '-0.8%'}
-                <span className="text-white/10 uppercase tracking-widest ml-1">vs mes anterior</span>
+            <div className={`mt-1 flex items-center gap-1.5 text-[9px] font-bold ${trend === 'neutral' ? 'text-blue-400' : trend === 'up' ? 'text-emerald-500' : 'text-rose-500'} relative z-10`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${trend === 'neutral' ? 'bg-blue-400' : trend === 'up' ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`} />
+                {trend === 'neutral' ? 'Capital reservado' : trend === 'up' ? '+2.4%' : '-0.8%'}
+                {trend !== 'neutral' && <span className="text-white/10 uppercase tracking-widest ml-1">vs mes anterior</span>}
             </div>
         </div>
     )
@@ -814,13 +816,15 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
 
         // Filter by Type
         const typeMatch = filter === 'ALL'
+            || (filter === 'SAVINGS' && !!t.isSavings)
             || (filter === 'LOAN' && isLoan)
-            || (filter !== 'LOAN' && filter !== 'ALL' && !isLoan && t.type === filter)
+            || (filter === 'EXPENSE' && !isLoan && !t.isSavings && t.type === 'EXPENSE')
+            || (filter === 'INCOME' && !isLoan && t.type === 'INCOME')
 
         // Filter by Payment Status
         const paymentMatch = paymentFilter === 'ALL'
             || (paymentFilter === 'PAID' && ((isLoan && t.loanStatus === 'PAID') || (!isLoan && t.isPaid)))
-            || (paymentFilter === 'PENDING' && ((isLoan && t.loanStatus === 'PENDING') || (!isLoan && !t.isPaid && t.type === 'EXPENSE')))
+            || (paymentFilter === 'PENDING' && ((isLoan && t.loanStatus === 'PENDING') || (!isLoan && !t.isSavings && !t.isPaid && t.type === 'EXPENSE')))
 
         // Filter by Currency
         const currencyMatch = currencyFilter === 'ALL' || t.currency === currencyFilter
@@ -920,13 +924,13 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
 
                 <div className="flex flex-wrap items-center gap-4">
                     <div className="flex gap-2">
-                        {['ALL', 'INCOME', 'EXPENSE', 'LOAN'].map((f) => (
+                        {['ALL', 'INCOME', 'EXPENSE', 'SAVINGS', 'LOAN'].map((f) => (
                             <button
                                 key={f}
                                 onClick={() => setFilter(f)}
                                 className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider border transition-all ${filter === f ? 'bg-white text-black border-white' : 'bg-transparent text-white/40 border-white/10 hover:border-white/30'}`}
                             >
-                                {f === 'ALL' ? 'Todos' : f === 'INCOME' ? 'Ingresos' : f === 'EXPENSE' ? 'Gastos' : 'Préstamos'}
+                                {f === 'ALL' ? 'Todos' : f === 'INCOME' ? 'Ingresos' : f === 'EXPENSE' ? 'Gastos' : f === 'SAVINGS' ? 'Ahorros' : 'Préstamos'}
                             </button>
                         ))}
                     </div>
@@ -985,7 +989,12 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
                         {filtered.map((t) => (
                             <tr key={t.id} className="hover:bg-white/[0.01] transition-colors group">
                                 <td className="p-4">
-                                    {t.loanType ? (
+                                    {t.isSavings ? (
+                                        <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-400">
+                                            <PiggyBank className="w-3 h-3" />
+                                            Ahorro
+                                        </span>
+                                    ) : t.loanType ? (
                                         <button
                                             onClick={() => handleTogglePaid(t.id, t.isPaid, t.loanStatus)}
                                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${t.loanStatus === 'PAID'
@@ -1017,8 +1026,8 @@ function TransactionsView({ transactions, onUpdate, onEdit }: { transactions: an
                                 <td className="p-4 text-white/30 font-mono text-[11px]">{new Date(t.date).toLocaleDateString()}</td>
                                 <td className="p-4 text-white/80 group-hover:text-white transition-colors">{t.description || '-'}</td>
                                 <td className="p-4 capitalize opacity-40 text-xs">{t.loanType ? `${t.loanParty || 'Préstamo'}` : t.category?.toLowerCase() || 'General'}</td>
-                                <td className={`p-4 text-right font-bold ${t.loanType ? 'text-violet-300' : t.type === 'INCOME' ? 'text-emerald-400' : 'text-white'}`}>
-                                    {t.type === 'INCOME' ? '+' : '-'} {t.currency === 'USD' ? 'U$D' : '$'} {t.amount.toLocaleString()}
+                                <td className={`p-4 text-right font-bold ${t.isSavings ? 'text-blue-400' : t.loanType ? 'text-violet-300' : t.type === 'INCOME' ? 'text-emerald-400' : 'text-white'}`}>
+                                    {t.isSavings ? '' : t.type === 'INCOME' ? '+' : '-'} {t.currency === 'USD' ? 'U$D' : '$'} {t.amount.toLocaleString()}
                                 </td>
                                 <td className="p-4 text-right flex items-center justify-end gap-2">
                                     <button

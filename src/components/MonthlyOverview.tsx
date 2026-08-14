@@ -14,7 +14,9 @@ export const MonthlyOverview = ({ transactions, usdRate = 1, onEdit }: { transac
 
     // Grouping Data
     const income = currentMonthData.filter(t => t.type === 'INCOME')
-    const expenses = currentMonthData.filter(t => t.type === 'EXPENSE')
+    // Los movimientos marcados como ahorro son transferencias a un activo,
+    // no consumo. Se muestran aparte en el historial y no inflan los gastos.
+    const expenses = currentMonthData.filter(t => t.type === 'EXPENSE' && !t.isSavings)
 
     const incomeBlanco = income.filter(t => t.incomeType === 'BLANCO')
     const incomeNegro = income.filter(t => t.incomeType === 'NEGRO')
