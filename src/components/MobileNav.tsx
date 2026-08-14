@@ -9,15 +9,16 @@ import { usePathname } from 'next/navigation'
 interface MobileNavProps {
     onAddClick?: () => void
     onSavingsClick?: () => void
+    savingsActive?: boolean
 }
 
-export const MobileNav = ({ onAddClick, onSavingsClick }: MobileNavProps) => {
+export const MobileNav = ({ onAddClick, onSavingsClick, savingsActive = false }: MobileNavProps) => {
     const pathname = usePathname()
 
     const navItems = [
         { icon: Home, label: 'Inicio', href: '/dashboard', active: pathname === '/dashboard' },
         { icon: BarChart3, label: 'Reportes', href: '/reports', active: pathname === '/reports' },
-        { icon: PiggyBank, label: 'Ahorro', href: '/savings', active: false },
+        { icon: PiggyBank, label: 'Ahorro', href: '/savings', active: savingsActive },
         { icon: Settings, label: 'Ajustes', href: '/settings/ai', active: pathname.startsWith('/settings') },
     ]
 

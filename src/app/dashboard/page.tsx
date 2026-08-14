@@ -13,7 +13,7 @@ import {
     FileText, TrendingUp, LayoutDashboard, Database, PieChart,
     Activity, ChevronLeft, ChevronRight, Menu, X, ArrowUpRight,
     ArrowDownRight, Search, Calendar, Filter, AlertCircle, Trash2, Edit3,
-    Users, Sparkles,
+    Users, Sparkles, Target, Eye, EyeOff,
 } from 'lucide-react'
 import { CheckCircle2 } from 'lucide-react'
 import { PiggyBank } from 'lucide-react'
@@ -27,7 +27,7 @@ import { SavingsGoalForm } from '@/components/SavingsGoalForm'
 import SettingsPage from '@/app/settings/page'
 import { UsersManagement } from '@/components/UsersManagement'
 
-type ViewState = 'DASHBOARD' | 'TRANSACTIONS' | 'ANALYTICS' | 'SETTINGS' | 'USERS'
+type ViewState = 'DASHBOARD' | 'TRANSACTIONS' | 'ANALYTICS' | 'SAVINGS' | 'SETTINGS' | 'USERS'
 
 export default function DashboardPage() {
     // Estado de sesión: intentamos cargar el usuario real desde el backend, si no existe usamos un genérico
@@ -54,6 +54,7 @@ export default function DashboardPage() {
     // Data States
     const [chartData, setChartData] = useState<{ name: string, income: number, expenses: number }[]>([])
     const [transactions, setTransactions] = useState<any[]>([])
+    const [savingsRefreshKey, setSavingsRefreshKey] = useState(0)
 
     // Command Palette Keyboard Shortcut
     useEffect(() => {
@@ -249,6 +250,15 @@ export default function DashboardPage() {
                 return <TransactionsView transactions={transactions} onUpdate={fetchData} onEdit={openEdit} />
             case 'ANALYTICS':
                 return <AnalyticsView chartData={chartData} transactions={transactions} />
+            case 'SAVINGS':
+                return (
+                    <SavingsGoalsView
+                        transactions={transactions}
+                        usdRate={usdRate}
+                        refreshKey={savingsRefreshKey}
+                        onCreate={() => setIsSavingsModalOpen(true)}
+                    />
+                )
             case 'SETTINGS':
                 return <SettingsPage />
             case 'USERS':
@@ -450,7 +460,6 @@ export default function DashboardPage() {
                 setIsOpen={setIsSidebarOpen}
                 currentView={currentView}
                 setCurrentView={setCurrentView}
-                setSavingsOpen={setIsSavingsModalOpen}
             />
 
             {/* Main Content Wrapper */}
@@ -475,7 +484,7 @@ export default function DashboardPage() {
                                         Hola, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">{session?.user?.name ? session.user.name.split(' ')[0] : 'Usuario'}</span>
                                     </h1>
                                     <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
-                                        {currentView === 'DASHBOARD' ? 'Panel de Control' : currentView}
+                                        {currentView === 'DASHBOARD' ? 'Panel de Control' : currentView === 'SAVINGS' ? 'Ahorro Pretendido' : currentView}
                                     </p>
                                 </div>
                             </div>
@@ -607,6 +616,7 @@ export default function DashboardPage() {
                     <Modal isOpen={isSavingsModalOpen} onClose={() => setIsSavingsModalOpen(false)} title="Meta de Ahorro">
                         <SavingsGoalForm onSaved={() => {
                             setIsSavingsModalOpen(false)
+                            setSavingsRefreshKey(key => key + 1)
                         }} />
                     </Modal>
                 )}
@@ -622,14 +632,166 @@ export default function DashboardPage() {
             />
 
             {/* Mobile Navigation */}
-            <MobileNav onAddClick={() => setIsExpenseModalOpen(true)} onSavingsClick={() => setIsSavingsModalOpen(true)} />
+            <MobileNav
+                onAddClick={() => setIsExpenseModalOpen(true)}
+                onSavingsClick={() => setCurrentView('SAVINGS')}
+                savingsActive={currentView === 'SAVINGS'}
+            />
         </div>
     )
 }
 
 // --- SUBCOMPONENTS ---
 
-function DesktopSidebar({ isOpen, setIsOpen, currentView, setCurrentView, setSavingsOpen }: any) {
+interface SavingsGoal {
+    id: string
+    name: string
+    amount: number
+    visible?: boolean
+}
+
+function SavingsGoalsView({ transactions, usdRate, refreshKey, onCreate }: {
+    transactions: any[]
+    usdRate: number
+    refreshKey: number
+    onCreate: () => void
+}) {
+    const [goals, setGoals] = useState<SavingsGoal[]>([])
+
+    const loadGoals = () => {
+        try {
+            const raw = localStorage.getItem('savingsGoals')
+            const parsed = raw ? JSON.parse(raw) : []
+            setGoals(Array.isArray(parsed) ? parsed : [])
+        } catch {
+            setGoals([])
+        }
+    }
+
+    useEffect(() => {
+        loadGoals()
+    }, [refreshKey])
+
+    const persistGoals = (next: SavingsGoal[]) => {
+        localStorage.setItem('savingsGoals', JSON.stringify(next))
+        setGoals(next)
+    }
+
+    const toggleVisibility = (id: string) => {
+        persistGoals(goals.map(goal => goal.id === id ? { ...goal, visible: goal.visible === false } : goal))
+    }
+
+    const deleteGoal = (id: string) => {
+        if (!confirm('¿Querés eliminar esta meta de ahorro?')) return
+        persistGoals(goals.filter(goal => goal.id !== id))
+    }
+
+    const rate = usdRate > 0 ? usdRate : 1
+    const totalSaved = transactions.reduce((total, transaction) => {
+        if (!transaction.isSavings) return total
+        return total + (transaction.currency === 'USD' ? transaction.amount * rate : transaction.amount)
+    }, 0)
+    const totalTarget = goals.reduce((total, goal) => total + Number(goal.amount || 0), 0)
+    const overallProgress = totalTarget > 0 ? Math.min(100, (totalSaved / totalTarget) * 100) : 0
+    const visibleGoals = goals.filter(goal => goal.visible !== false)
+    const hiddenGoals = goals.filter(goal => goal.visible === false)
+
+    return (
+        <div className="space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blue-400 mb-2">Plan de ahorro</p>
+                    <h2 className="text-2xl font-bold tracking-tight">Tus ahorros pretendidos</h2>
+                    <p className="text-sm text-white/40 mt-2">Organizá tus objetivos y seguí cuánto te falta para alcanzarlos.</p>
+                </div>
+                <Button onClick={onCreate} variant="glow">
+                    <Plus className="w-4 h-4 mr-2" /> Nueva meta
+                </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <SavingsSummaryCard label="Objetivo total" value={`$ ${totalTarget.toLocaleString('es-AR')}`} detail={`${goals.length} ${goals.length === 1 ? 'meta' : 'metas'}`} icon={<Target className="w-5 h-5" />} />
+                <SavingsSummaryCard label="Ahorro registrado" value={`$ ${Math.round(totalSaved).toLocaleString('es-AR')}`} detail="Movimientos marcados como ahorro" icon={<PiggyBank className="w-5 h-5" />} />
+                <SavingsSummaryCard label="Progreso general" value={`${overallProgress.toFixed(0)}%`} detail={totalTarget > 0 ? `$ ${Math.max(0, Math.round(totalTarget - totalSaved)).toLocaleString('es-AR')} por completar` : 'Creá una meta para comenzar'} icon={<TrendingUp className="w-5 h-5" />} />
+            </div>
+
+            {goals.length === 0 ? (
+                <Card className="!p-10 !rounded-[24px] border-dashed border-blue-500/20 bg-gradient-to-br from-blue-500/[0.06] to-transparent text-center">
+                    <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-5">
+                        <PiggyBank className="w-7 h-7" />
+                    </div>
+                    <h3 className="text-lg font-bold">Todavía no tenés metas de ahorro</h3>
+                    <p className="text-sm text-white/40 mt-2 mb-6">Creá tu primer objetivo para verlo y seguir su avance desde acá.</p>
+                    <Button onClick={onCreate} variant="glow"><Plus className="w-4 h-4 mr-2" /> Crear primera meta</Button>
+                </Card>
+            ) : (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    {visibleGoals.map(goal => {
+                        const amount = Number(goal.amount || 0)
+                        const progress = amount > 0 ? Math.min(100, (totalSaved / amount) * 100) : 0
+                        const remaining = Math.max(0, amount - totalSaved)
+                        return (
+                            <Card key={goal.id} className="!p-6 !rounded-[22px] !overflow-hidden bg-gradient-to-br from-blue-500/[0.07] to-transparent">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 shrink-0"><Target className="w-5 h-5" /></div>
+                                        <div className="min-w-0">
+                                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30">Meta de ahorro</p>
+                                            <h3 className="font-bold text-lg truncate">{goal.name}</h3>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        <button onClick={() => toggleVisibility(goal.id)} title="Ocultar meta" className="p-2 rounded-lg text-white/35 hover:text-white hover:bg-white/5 transition-colors"><EyeOff className="w-4 h-4" /></button>
+                                        <button onClick={() => deleteGoal(goal.id)} title="Eliminar meta" className="p-2 rounded-lg text-white/35 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                                    </div>
+                                </div>
+                                <div className="mt-6 flex items-end justify-between gap-4">
+                                    <div>
+                                        <p className="text-2xl font-bold">$ {amount.toLocaleString('es-AR')}</p>
+                                        <p className="text-xs text-white/40 mt-1">Objetivo en ARS</p>
+                                    </div>
+                                    <p className="text-sm font-bold text-blue-400">{progress.toFixed(0)}%</p>
+                                </div>
+                                <div className="h-2 rounded-full bg-white/5 overflow-hidden mt-4">
+                                    <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-400 transition-all duration-500" style={{ width: `${progress}%` }} />
+                                </div>
+                                <p className="text-xs text-white/40 mt-3">{remaining === 0 ? '¡Objetivo alcanzado!' : `Faltan $ ${Math.round(remaining).toLocaleString('es-AR')}`}</p>
+                            </Card>
+                        )
+                    })}
+                </div>
+            )}
+
+            {hiddenGoals.length > 0 && (
+                <Card className="!p-5 !rounded-[20px]">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 mb-3">Metas ocultas</p>
+                    <div className="flex flex-wrap gap-2">
+                        {hiddenGoals.map(goal => (
+                            <button key={goal.id} onClick={() => toggleVisibility(goal.id)} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/5 text-sm text-white/60 hover:text-white hover:border-white/10 transition-colors">
+                                <Eye className="w-4 h-4" /> {goal.name}
+                            </button>
+                        ))}
+                    </div>
+                </Card>
+            )}
+        </div>
+    )
+}
+
+function SavingsSummaryCard({ label, value, detail, icon }: { label: string, value: string, detail: string, icon: React.ReactNode }) {
+    return (
+        <Card className="!p-5 !rounded-[20px]">
+            <div className="flex items-center justify-between gap-4 mb-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">{label}</p>
+                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400">{icon}</div>
+            </div>
+            <p className="text-2xl font-bold tracking-tight">{value}</p>
+            <p className="text-xs text-white/35 mt-2">{detail}</p>
+        </Card>
+    )
+}
+
+function DesktopSidebar({ isOpen, setIsOpen, currentView, setCurrentView }: any) {
     return (
         <motion.aside
             initial={false}
@@ -679,8 +841,8 @@ function DesktopSidebar({ isOpen, setIsOpen, currentView, setCurrentView, setSav
                     icon={<PiggyBank className="w-5 h-5" />}
                     label="Ahorro Pretendido"
                     isOpen={isOpen}
-                    active={false}
-                    onClick={() => setSavingsOpen(true)}
+                    active={currentView === 'SAVINGS'}
+                    onClick={() => setCurrentView('SAVINGS')}
                 />
                 <SidebarItem
                     icon={<Settings className="w-5 h-5" />}
