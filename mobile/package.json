@@ -8,6 +8,7 @@
     "expo-linear-gradient": "~57.0.1",
     "expo-secure-store": "~57.0.1",
     "expo-status-bar": "~57.0.1",
+    "expo-updates": "~57.0.13",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.2",
@@ -22,7 +23,9 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "update:production": "eas update --channel production --platform android --environment production",
+    "build:android:device": "eas build --platform android --profile preview"
   },
   "private": true
 }

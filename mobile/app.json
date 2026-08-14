@@ -2,7 +2,7 @@
   "expo": {
     "name": "Finance AI",
     "slug": "finance-ai",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -12,19 +12,32 @@
     },
     "android": {
       "package": "com.accesoit.financeai",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#050607",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "06fcb1db-07c3-4f53-8019-12b17daa7946"
+      }
+    },
+    "owner": "ebanega",
+    "updates": {
+      "url": "https://u.expo.dev/06fcb1db-07c3-4f53-8019-12b17daa7946"
+    }
   }
 }

@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
+import * as Updates from 'expo-updates'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
@@ -108,6 +109,7 @@ function FinanceApp() {
   const [editorOpen, setEditorOpen] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [draft, setDraft] = useState<TransactionDraft>(emptyDraft())
+  const [checkingUpdate, setCheckingUpdate] = useState(false)
 
   useEffect(() => {
     restoreSession()
@@ -172,11 +174,41 @@ function FinanceApp() {
     ])
   }
 
+  const checkForUpdates = async () => {
+    if (__DEV__) {
+      Alert.alert('Actualizaciones', 'Las actualizaciones remotas se comprueban en la versión instalada.')
+      return
+    }
+
+    setCheckingUpdate(true)
+    try {
+      const update = await Updates.checkForUpdateAsync()
+      if (!update.isAvailable) {
+        Alert.alert('Finance AI está actualizada', 'Ya tenés la versión más reciente.')
+        return
+      }
+
+      await Updates.fetchUpdateAsync()
+      Alert.alert(
+        'Actualización lista',
+        'La nueva versión ya se descargó. ¿Querés aplicarla ahora?',
+        [
+          { text: 'Más tarde', style: 'cancel' },
+          { text: 'Actualizar ahora', onPress: () => Updates.reloadAsync() },
+        ],
+      )
+    } catch (error) {
+      Alert.alert('No se pudo actualizar', (error as Error).message)
+    } finally {
+      setCheckingUpdate(false)
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <NativeStatusBar backgroundColor={colors.bg} barStyle="light-content" />
       <View style={styles.appShell}>
-        <Header user={user} onLogout={handleLogout} />
+        <Header user={user} onLogout={handleLogout} onUpdate={checkForUpdates} checkingUpdate={checkingUpdate} />
         {tab === 'home' ? (
           <Dashboard
             transactions={transactions}
@@ -308,13 +340,22 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
               {loading ? <ActivityIndicator color="#001d14" /> : <Text style={styles.primaryButtonText}>Ingresar</Text>}
             </Pressable>
           </View>
+          <View style={styles.otaStatus}>
+            <View style={styles.otaStatusDot} />
+            <Text style={styles.otaStatusText}>ACTUALIZACIONES REMOTAS ACTIVAS</Text>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
 
-function Header({ user, onLogout }: { user: User; onLogout: () => void }) {
+function Header({ user, onLogout, onUpdate, checkingUpdate }: {
+  user: User
+  onLogout: () => void
+  onUpdate: () => void
+  checkingUpdate: boolean
+}) {
   const firstName = user.name?.split(' ')[0] || 'Ezequiel'
   return (
     <View style={styles.header}>
@@ -322,9 +363,16 @@ function Header({ user, onLogout }: { user: User; onLogout: () => void }) {
         <Text style={styles.eyebrow}>PANEL DE CONTROL</Text>
         <Text style={styles.headerTitle}>Hola, <Text style={{ color: colors.blue }}>{firstName}</Text></Text>
       </View>
-      <Pressable style={styles.avatar} onPress={onLogout}>
-        <Text style={styles.avatarText}>{firstName.slice(0, 2).toUpperCase()}</Text>
-      </Pressable>
+      <View style={styles.headerActions}>
+        <Pressable style={styles.updateButton} onPress={onUpdate} disabled={checkingUpdate}>
+          {checkingUpdate
+            ? <ActivityIndicator size="small" color={colors.blue} />
+            : <Ionicons name="cloud-download-outline" size={20} color={colors.blue} />}
+        </Pressable>
+        <Pressable style={styles.avatar} onPress={onLogout}>
+          <Text style={styles.avatarText}>{firstName.slice(0, 2).toUpperCase()}</Text>
+        </Pressable>
+      </View>
     </View>
   )
 }
@@ -698,6 +746,9 @@ const styles = StyleSheet.create({
   loginTitle: { color: colors.text, fontSize: 38, lineHeight: 43, fontWeight: '800', letterSpacing: -1.5 },
   loginSubtitle: { color: colors.muted, fontSize: 15, lineHeight: 22, marginTop: 14, marginBottom: 30 },
   loginCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 24, padding: 20 },
+  otaStatus: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 18 },
+  otaStatusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.green },
+  otaStatusText: { color: '#626b75', fontSize: 8, fontWeight: '900', letterSpacing: 1.1 },
   fieldLabel: { color: '#7b838d', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginBottom: 8, marginTop: 14 },
   textInput: { height: 54, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: '#090b0d', color: colors.text, paddingHorizontal: 16, fontSize: 15 },
   errorText: { color: colors.red, fontSize: 12, marginTop: 12 },
@@ -705,6 +756,8 @@ const styles = StyleSheet.create({
   primaryButtonText: { color: '#001d14', fontWeight: '900', fontSize: 15 },
   pressed: { opacity: 0.72, transform: [{ scale: 0.985 }] },
   header: { height: 82, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#111418' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  updateButton: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d1520', borderWidth: 1, borderColor: '#1c2b3e' },
   eyebrow: { color: '#707985', fontSize: 9, fontWeight: '900', letterSpacing: 1.6 },
   headerTitle: { color: colors.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.7, marginTop: 3 },
   avatar: { width: 44, height: 44, borderRadius: 15, backgroundColor: '#e7e7e8', alignItems: 'center', justifyContent: 'center' },
