@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Finance AI",
+    "slug": "finance-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "financeai",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.accesoit.financeai",
+      "adaptiveIcon": {
+        "backgroundColor": "#050607",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
+  }
+}

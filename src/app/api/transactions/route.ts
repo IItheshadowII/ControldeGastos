@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { authFromRequest } from "@/auth";
 import prisma from "@/lib/prisma";
 import { broadcastRealtime } from "@/lib/realtime";
 
 export async function POST(req: NextRequest) {
-    const session = await auth();
+    const session = await authFromRequest(req);
     const userId = session?.user?.id;
 
     if (!userId) {
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const session = await auth();
+    const session = await authFromRequest(req);
     const userId = session?.user?.id;
 
     if (!userId) {
