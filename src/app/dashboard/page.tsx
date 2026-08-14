@@ -264,7 +264,7 @@ export default function DashboardPage() {
                             {/* Main Monthly Overview Section - Replaces Chart */}
                             <div className="min-w-0 space-y-5">
                                 <div>
-                                    <MonthlyOverview transactions={transactions} usdRate={usdRate} />
+                                    <MonthlyOverview transactions={transactions} usdRate={usdRate} onEdit={openEdit} />
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_0.8fr_1.4fr] gap-4">
@@ -365,7 +365,19 @@ export default function DashboardPage() {
                                     </div>
                                     <div className="max-h-[420px] overflow-y-auto p-2 space-y-1 custom-scrollbar">
                                         {transactions.slice(0, 10).map((t: any) => (
-                                            <div key={t.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3 rounded-[14px] hover:bg-white/5 transition-colors group border border-transparent hover:border-white/5">
+                                            <div
+                                                key={t.id}
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() => openEdit(t)}
+                                                onKeyDown={(event) => {
+                                                    if (event.key === 'Enter' || event.key === ' ') {
+                                                        event.preventDefault()
+                                                        openEdit(t)
+                                                    }
+                                                }}
+                                                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3 rounded-[14px] hover:bg-white/5 transition-colors group border border-transparent hover:border-white/5 cursor-pointer focus:outline-none focus-visible:border-blue-500/40 focus-visible:bg-white/[0.04]"
+                                            >
                                                 <div className="flex min-w-0 items-center gap-3">
                                                     <div className={`p-2 rounded-[10px] shrink-0 ${t.loanType ? 'bg-violet-500/10 text-violet-300' : t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
                                                         {t.loanType ? <Sparkles className="w-4 h-4" /> : t.type === 'INCOME' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
@@ -386,7 +398,7 @@ export default function DashboardPage() {
                                                             {t.currency === 'USD' ? 'U$D' : '$'} {t.amount.toLocaleString()}
                                                         </span>
                                                         {(t.type === 'EXPENSE' || t.loanType) && (
-                                                            <button onClick={() => handleTogglePaid(t.id, t.isPaid, t.loanStatus)} className={`mt-1 ml-auto flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${t.isPaid || t.loanStatus === 'PAID' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-amber-500/10 border-amber-500/30 text-amber-400'}`} title={t.isPaid || t.loanStatus === 'PAID' ? 'Desmarcar pagado' : 'Marcar como pagado'}>
+                                                            <button onClick={(event) => { event.stopPropagation(); handleTogglePaid(t.id, t.isPaid, t.loanStatus) }} className={`mt-1 ml-auto flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${t.isPaid || t.loanStatus === 'PAID' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-amber-500/10 border-amber-500/30 text-amber-400'}`} title={t.isPaid || t.loanStatus === 'PAID' ? 'Desmarcar pagado' : 'Marcar como pagado'}>
                                                                 {t.isPaid || t.loanStatus === 'PAID' ? <CheckCircle2 className="w-3 h-3" /> : null}
                                                                 {t.isPaid || t.loanStatus === 'PAID' ? 'Pagado' : 'Pendiente'}
                                                             </button>
@@ -394,13 +406,13 @@ export default function DashboardPage() {
                                                     </div>
 
                                                     <div className="flex items-center gap-1">
-                                                        <button onClick={() => handleToggleSavings(t.id, t.isSavings)} className={`p-1.5 rounded-lg border ${t.isSavings ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-white/30'}`} title={t.isSavings ? 'Quitar ahorro' : 'Marcar como ahorro'}>
+                                                        <button onClick={(event) => { event.stopPropagation(); handleToggleSavings(t.id, t.isSavings) }} className={`p-1.5 rounded-lg border ${t.isSavings ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-white/30'}`} title={t.isSavings ? 'Quitar ahorro' : 'Marcar como ahorro'}>
                                                             <PiggyBank className="w-3.5 h-3.5" />
                                                         </button>
-                                                        <button onClick={() => openEdit(t)} className="p-1.5 rounded-lg border bg-white/5 border-white/10 text-white/30 hover:text-white" title="Editar">
+                                                        <button onClick={(event) => { event.stopPropagation(); openEdit(t) }} className="p-1.5 rounded-lg border bg-white/5 border-white/10 text-white/30 hover:text-white" title="Editar">
                                                             <Edit3 className="w-3.5 h-3.5" />
                                                         </button>
-                                                        <button onClick={() => handleDelete(t.id)} className="p-1.5 rounded-lg border bg-white/5 border-white/10 text-white/30 hover:text-rose-400" title="Eliminar">
+                                                        <button onClick={(event) => { event.stopPropagation(); handleDelete(t.id) }} className="p-1.5 rounded-lg border bg-white/5 border-white/10 text-white/30 hover:text-rose-400" title="Eliminar">
                                                             <Trash2 className="w-3.5 h-3.5" />
                                                         </button>
                                                     </div>

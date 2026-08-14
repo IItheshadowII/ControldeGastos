@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 import { Card } from './ui-glass'
 import { ArrowUpCircle, ArrowDownCircle, DollarSign, CreditCard } from 'lucide-react'
 
-export const MonthlyOverview = ({ transactions, usdRate = 1 }: { transactions: any[]; usdRate?: number }) => {
+export const MonthlyOverview = ({ transactions, usdRate = 1, onEdit }: { transactions: any[]; usdRate?: number; onEdit?: (transaction: any) => void }) => {
     // Filter for Current Month
     const currentMonthData = useMemo(() => {
         const now = new Date()
@@ -93,8 +93,8 @@ export const MonthlyOverview = ({ transactions, usdRate = 1 }: { transactions: a
                     </div>
 
                     <div className="space-y-4">
-                        <SectionBlock title="Flujos en Blanco" items={incomeBlanco} color="text-emerald-400" />
-                        <SectionBlock title="Flujos en Negro" items={incomeNegro} color="text-emerald-400/60" />
+                        <SectionBlock title="Flujos en Blanco" items={incomeBlanco} color="text-emerald-400" onEdit={onEdit} />
+                        <SectionBlock title="Flujos en Negro" items={incomeNegro} color="text-emerald-400/60" onEdit={onEdit} />
                     </div>
                 </div>
 
@@ -112,7 +112,7 @@ export const MonthlyOverview = ({ transactions, usdRate = 1 }: { transactions: a
 
                     <div className="space-y-1 max-h-[270px] overflow-y-auto custom-scrollbar pr-1">
                         {expensesFixed.length > 0 ? expensesFixed.map(t => (
-                            <RowItem key={t.id} label={t.description} amount={t.amount} currency={t.currency} isPaid={t.isPaid} />
+                            <RowItem key={t.id} transaction={t} label={t.description} amount={t.amount} currency={t.currency} isPaid={t.isPaid} onEdit={onEdit} />
                         )) : <EmptyState label="Sin gastos fijos registrados" />}
                     </div>
                 </div>
@@ -132,7 +132,7 @@ export const MonthlyOverview = ({ transactions, usdRate = 1 }: { transactions: a
                         </div>
                         <div className="space-y-1 max-h-[100px] md:max-h-[120px] overflow-y-auto custom-scrollbar pr-2">
                             {expensesUSD.length > 0 ? expensesUSD.map(t => (
-                                <RowItem key={t.id} label={t.description} amount={t.amount} currency="USD" isPaid={t.isPaid} />
+                                <RowItem key={t.id} transaction={t} label={t.description} amount={t.amount} currency="USD" isPaid={t.isPaid} onEdit={onEdit} />
                             )) : <EmptyState label="Sin movimientos en USD" />}
                         </div>
                     </div>
@@ -150,7 +150,7 @@ export const MonthlyOverview = ({ transactions, usdRate = 1 }: { transactions: a
                         </div>
                         <div className="space-y-1 max-h-[150px] md:max-h-[180px] overflow-y-auto custom-scrollbar pr-2">
                             {expensesVariable.length > 0 ? expensesVariable.map(t => (
-                                <RowItem key={t.id} label={t.description} amount={t.amount} currency={t.currency} isPaid={t.isPaid} />
+                                <RowItem key={t.id} transaction={t} label={t.description} amount={t.amount} currency={t.currency} isPaid={t.isPaid} onEdit={onEdit} />
                             )) : <EmptyState label="Sin gastos adicionales" />}
                         </div>
                     </div>
@@ -160,7 +160,7 @@ export const MonthlyOverview = ({ transactions, usdRate = 1 }: { transactions: a
     )
 }
 
-const SectionBlock = ({ title, items, color }: any) => (
+const SectionBlock = ({ title, items, color, onEdit }: any) => (
     <div className="space-y-3">
         <h5 className="text-[9px] uppercase font-bold text-white/10 tracking-[0.2em] flex items-center gap-2">
             <div className="w-1 h-1 rounded-full bg-white/10" />
@@ -169,7 +169,7 @@ const SectionBlock = ({ title, items, color }: any) => (
         {items.length > 0 ? (
             <div className="space-y-1">
                 {items.map((t: any) => (
-                    <RowItem key={t.id} label={t.description} amount={t.amount} currency={t.currency} color={color} isPaid={true} />
+                    <RowItem key={t.id} transaction={t} label={t.description} amount={t.amount} currency={t.currency} color={color} isPaid={true} onEdit={onEdit} />
                 ))}
             </div>
         ) : (
@@ -178,8 +178,19 @@ const SectionBlock = ({ title, items, color }: any) => (
     </div>
 )
 
-const RowItem = ({ label, amount, currency, color = "text-white/60", isPaid = true }: any) => (
-    <div className="flex items-center justify-between p-2 rounded-[10px] hover:bg-white/[0.03] transition-all group/row border border-transparent hover:border-white/5">
+const RowItem = ({ transaction, label, amount, currency, color = "text-white/60", isPaid = true, onEdit }: any) => (
+    <div
+        role={onEdit ? "button" : undefined}
+        tabIndex={onEdit ? 0 : undefined}
+        onClick={() => onEdit?.(transaction)}
+        onKeyDown={(event) => {
+            if (onEdit && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault()
+                onEdit(transaction)
+            }
+        }}
+        className={`flex items-center justify-between p-2 rounded-[10px] hover:bg-white/[0.03] transition-all group/row border border-transparent hover:border-white/5 ${onEdit ? 'cursor-pointer focus:outline-none focus-visible:border-blue-500/40 focus-visible:bg-white/[0.04]' : ''}`}
+    >
         <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
             <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isPaid
                     ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse'
