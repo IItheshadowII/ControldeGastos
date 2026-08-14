@@ -8,6 +8,7 @@ const SESSION_COOKIE_NAME = "session_token";
 const PUBLIC_PATHS = [
     "/login",
     "/api/auth/login",
+    "/api/mobile/auth/login",
 ];
 
 function isPublicPath(pathname: string) {
@@ -28,6 +29,13 @@ export function middleware(req: NextRequest) {
 
     // Permitir rutas públicas
     if (isPublicPath(pathname)) {
+        return NextResponse.next();
+    }
+
+    // Las apps móviles se autentican con Bearer. La validez del token se
+    // comprueba dentro de cada ruta mediante authFromRequest.
+    const authorization = req.headers.get("authorization");
+    if (authorization?.match(/^Bearer\s+\S+$/i)) {
         return NextResponse.next();
     }
 
