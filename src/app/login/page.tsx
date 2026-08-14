@@ -29,8 +29,11 @@ export default function LoginPage() {
                 throw new Error(data.error || 'Error al iniciar sesión')
             }
 
-            // Navegación completa para cargar el dashboard ya autenticado.
-            window.location.href = '/dashboard'
+            // Volver al flujo que solicitó autenticación (por ejemplo OAuth MCP).
+            const requestedPath = new URLSearchParams(window.location.search).get('from')
+            window.location.href = requestedPath?.startsWith('/') && !requestedPath.startsWith('//')
+                ? requestedPath
+                : '/dashboard'
         } catch (e: any) {
             setError(e.message || 'Error al iniciar sesión')
         } finally {

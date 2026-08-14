@@ -9,6 +9,9 @@ const PUBLIC_PATHS = [
     "/login",
     "/api/auth/login",
     "/api/mobile/auth/login",
+    "/mcp",
+    "/.well-known/oauth-protected-resource",
+    "/.well-known/oauth-authorization-server",
 ];
 
 function isPublicPath(pathname: string) {
